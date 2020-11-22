@@ -2,6 +2,7 @@ package volvis;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.test.junit.graph.demos.GPURegionGLListener01;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 import gui.RaycastRendererPanel;
@@ -94,12 +95,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Cutting plane normal vector.
      */
-    private final double[] planeNorm = new double[]{0d, 0d, 1d};
+    private final double[] planeNorm = new double[] { 0d, 0d, 1d };
 
     /**
      * Cutting plane point.
      */
-    private final double[] planePoint = new double[]{0d, 0d, 0d};
+    private final double[] planePoint = new double[] { 0d, 0d, 0d };
 
     /**
      * Back mode of our raycast for cutting plane.
@@ -148,12 +149,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * @return The voxel value.
      */
     private short getVoxel(double[] coord) {
+        /*
+         * System.out.println("####################"); for (double element : coord) {
+         * System.out.println(element); }
+         */
         // Get coordinates
         double dx = coord[0], dy = coord[1], dz = coord[2];
 
         // Verify they are inside the volume
-        if (dx < 0 || dx >= volume.getDimX() || dy < 0 || dy >= volume.getDimY()
-                || dz < 0 || dz >= volume.getDimZ()) {
+        if (dx < 0 || dx >= volume.getDimX() || dy < 0 || dy >= volume.getDimY() || dz < 0 || dz >= volume.getDimZ()) {
 
             // If not, jus return 0
             return 0;
@@ -170,6 +174,25 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     }
 
     /**
+     * Converts an int to binary form
+     *
+     * @param input the number to convert to binary format.
+     * @return int as bits.
+     */
+    private boolean[] convertToBinary(int input) {
+
+        boolean[] bits = new boolean[3];
+        for (int i = 2; i >= 0; i--) {
+            bits[i] = (input & (1 << i)) != 0;
+        }
+        return bits;
+    }
+
+    private double getProportion(double x, double x0) {
+        return Math.abs(x - x0);// since we know that distance is 1
+    }
+
+    /**
      * Gets the corresponding voxel using Tri-linear Interpolation.
      *
      * @param coord Pixel coordinate in 3D space of the voxel we want to get.
@@ -177,8 +200,35 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     private short getVoxelTrilinear(double[] coord) {
         // TODO 1: Implement Tri-Linear interpolation and use it in your code
+        int nPoints = 8;
+        double[][] nearestPoints = new double[nPoints][3];// [points][coordinate x-y-z]
+
+        boolean[] binary = new boolean[3];
+
+        // getting the nearest points in the "cube"
+        for (int i = 0; i < nPoints; i++) {
+            binary = convertToBinary(i); // we get the nearest known datapoints by flooring and ceiling the inputs
+                                         // coordinates
+            // FLAG they might be in the wrong order
+            nearestPoints[i][0] = binary[2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][1] = binary[1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
+            nearestPoints[i][2] = binary[0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+        }
+
+        // Calculating portions
+        double alpha = getProportion(coord[0], nearestPoints[0][0]);
+        double beta = getProportion(coord[1], nearestPoints[0][1]);
+        double gamma = getProportion(coord[2], nearestPoints[0][2]);
+
+        short result = 0;
+        // Tri-linear interpolation
+        for (int i = 0; i < nPoints; i++) {
+            binary = convertToBinary(i);
+            result += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+                    * getVoxel(nearestPoints[i]);
+        }
         // instead of getVoxel().
-        return 0;
+        return result;
     }
 
     /**
@@ -192,8 +242,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double dx = coord[0], dy = coord[1], dz = coord[2];
 
         // Verify they are inside the volume gradient
-        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2)
-                || dz < 0 || dz > (gradients.getDimZ() - 2)) {
+        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2) || dz < 0
+                || dz > (gradients.getDimZ() - 2)) {
 
             // If not, just return a zero gradient
             return ZERO_GRADIENT;
@@ -205,7 +255,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int y = (int) Math.round(dy);
         int z = (int) Math.round(dz);
 
-        // Finally, get the gradient from GradientVolume for the corresponding coordinates
+        // Finally, get the gradient from GradientVolume for the corresponding
+        // coordinates
         return gradients.getGradient(x, y, z);
     }
 
@@ -225,8 +276,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * technique.
      *
      * @param viewMatrix OpenGL View matrix {
-     * @see
-     * <a href="www.songho.ca/opengl/gl_transform.html#modelview">link</a>}.
+     * @see <a href="www.songho.ca/opengl/gl_transform.html#modelview">link</a>}.
      */
     private void slicer(double[] viewMatrix) {
 
@@ -234,8 +284,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         resetImage();
 
         // vector uVec and vVec define a plane through the origin,
-        // perpendicular to the view vector viewVec which is going from the view point towards the object
-        // uVec contains the up vector of the camera in world coordinates (image vertical)
+        // perpendicular to the view vector viewVec which is going from the view point
+        // towards the object
+        // uVec contains the up vector of the camera in world coordinates (image
+        // vertical)
         // vVec contains the horizontal vector in world coordinates (image horizontal)
         double[] viewVec = new double[3];
         double[] uVec = new double[3];
@@ -244,13 +296,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.setVector(uVec, viewMatrix[0], viewMatrix[4], viewMatrix[8]);
         VectorMath.setVector(vVec, viewMatrix[1], viewMatrix[5], viewMatrix[9]);
 
-        // We get the size of the image/texture we will be puting the result of the 
+        // We get the size of the image/texture we will be puting the result of the
         // volume rendering operation.
         int imageW = image.getWidth();
         int imageH = image.getHeight();
 
         int[] imageCenter = new int[2];
-        // Center of the image/texture 
+        // Center of the image/texture
         imageCenter[0] = imageW / 2;
         imageCenter[1] = imageH / 2;
 
@@ -270,20 +322,22 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // computes the pixelCoord which contains the 3D coordinates of the pixels (i,j)
                 computePixelCoordinatesFloat(pixelCoord, volumeCenter, uVec, vVec, i, j);
 
-                int val = getVoxel(pixelCoord);
-                //NOTE: you have to implement this function to get the tri-linear interpolation
-                //int val = getVoxelTrilinear(pixelCoord);
+                // int val = getVoxel(pixelCoord);
+                // NOTE: you have to implement this function to get the tri-linear interpolation
+
+                int val = getVoxelTrilinear(pixelCoord);
 
                 // Map the intensity to a grey value by linear scaling
                 pixelColor.r = val / max;
                 pixelColor.g = pixelColor.r;
                 pixelColor.b = pixelColor.r;
-                pixelColor.a = val > 0 ? 1.0 : 0.0;  // this makes intensity 0 completely transparent and the rest opaque
+                pixelColor.a = val > 0 ? 1.0 : 0.0; // this makes intensity 0 completely transparent and the rest opaque
                 // Alternatively, apply the transfer function to obtain a color
                 // pixelColor = tFuncFront.getColor(val);
 
-                //BufferedImage/image/texture expects a pixel color packed as ARGB in an int
-                //use the function computeImageColor to convert your double color in the range 0-1 to the format need by the image
+                // BufferedImage/image/texture expects a pixel color packed as ARGB in an int
+                // use the function computeImageColor to convert your double color in the range
+                // 0-1 to the format need by the image
                 int packedPixelColor = computePackedPixelColor(pixelColor.r, pixelColor.g, pixelColor.b, pixelColor.a);
                 image.setRGB(i, j, packedPixelColor);
             }
@@ -293,26 +347,27 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Do NOT modify this function.
      *
-     * Updates {@link #image} attribute (result of rendering) using MIP
-     * raycasting. It returns the color assigned to a ray/pixel given its
-     * starting and ending points, and the direction of the ray.
+     * Updates {@link #image} attribute (result of rendering) using MIP raycasting.
+     * It returns the color assigned to a ray/pixel given its starting and ending
+     * points, and the direction of the ray.
      *
      * @param entryPoint Starting point of the ray.
-     * @param exitPoint Last point of the ray.
-     * @param rayVector Direction of the ray.
+     * @param exitPoint  Last point of the ray.
+     * @param rayVector  Direction of the ray.
      * @param sampleStep Sample step of the ray.
      * @return Color assigned to a ray/pixel.
      */
     private int traceRayMIP(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep) {
-        //compute the increment and the number of samples
+        // compute the increment and the number of samples
         double[] increments = new double[3];
-        VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
+        VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
+                rayVector[2] * sampleStep);
 
         // Compute the number of times we need to sample
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
 
-        //the current position is initialized as the entry point
+        // the current position is initialized as the entry point
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
@@ -342,25 +397,26 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
     /**
      *
-     * Updates {@link #image} attribute (result of rendering) using the
-     * Isosurface raycasting. It returns the color assigned to a ray/pixel given
-     * its starting and ending points, and the direction of the ray.
+     * Updates {@link #image} attribute (result of rendering) using the Isosurface
+     * raycasting. It returns the color assigned to a ray/pixel given its starting
+     * and ending points, and the direction of the ray.
      *
      * @param entryPoint Starting point of the ray.
-     * @param exitPoint Last point of the ray.
-     * @param rayVector Direction of the ray.
+     * @param exitPoint  Last point of the ray.
+     * @param rayVector  Direction of the ray.
      * @param sampleStep Sample step of the ray.
      * @return Color assigned to a ray/pixel.
      */
     private int traceRayIso(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep) {
 
         double[] lightVector = new double[3];
-        //We define the light vector as directed toward the view point (which is the source of the light)
+        // We define the light vector as directed toward the view point (which is the
+        // source of the light)
         // another light vector would be possible
         VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
 
         // TODO 3: Implement isosurface rendering.
-        //Initialization of the colors as floating point values
+        // Initialization of the colors as floating point values
         double r, g, b;
         r = g = b = 0.0;
         double alpha = 0.0;
@@ -371,7 +427,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         g = isoColorFront.g;
         b = isoColorFront.b;
         alpha = 1.0;
-        //computes the color
+        // computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
     }
@@ -380,25 +436,25 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      *
      * Updates {@link #image} attribute (result of rendering) using the
      * compositing/accumulated raycasting. It returns the color assigned to a
-     * ray/pixel given its starting and ending points, and the direction of the
-     * ray.
+     * ray/pixel given its starting and ending points, and the direction of the ray.
      *
      * Ray must be sampled with a distance defined by sampleStep.
      *
      * @param entryPoint Starting point of the ray.
-     * @param exitPoint Last point of the ray.
-     * @param rayVector Direction of the ray.
+     * @param exitPoint  Last point of the ray.
+     * @param rayVector  Direction of the ray.
      * @param sampleStep Sample step of the ray.
      * @return Color assigned to a ray/pixel.
      */
     private int traceRayComposite(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep) {
         double[] lightVector = new double[3];
 
-        //the light vector is directed toward the view point (which is the source of the light)
-        // another light vector would be possible 
+        // the light vector is directed toward the view point (which is the source of
+        // the light)
+        // another light vector would be possible
         VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
 
-        //Initialization of the colors as floating point values
+        // Initialization of the colors as floating point values
         double r, g, b;
         r = g = b = 0.0;
         double alpha = 0.0;
@@ -407,10 +463,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor voxel_color = new TFColor();
         TFColor colorAux = new TFColor();
 
-        // TODO 2: To be Implemented this function. Now, it just gives back a constant color depending on the mode
+        // TODO 2: To be Implemented this function. Now, it just gives back a constant
+        // color depending on the mode
         switch (modeFront) {
             case COMPOSITING:
-                // 1D transfer function 
+                // 1D transfer function
                 voxel_color.r = 1;
                 voxel_color.g = 0;
                 voxel_color.b = 0;
@@ -418,7 +475,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 opacity = 1;
                 break;
             case TRANSFER2D:
-                // 2D transfer function 
+                // 2D transfer function
                 voxel_color.r = 0;
                 voxel_color.g = 1;
                 voxel_color.b = 0;
@@ -441,19 +498,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         b = voxel_color.b;
         alpha = opacity;
 
-        //computes the color
+        // computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
     }
 
     /**
-     * Compute Phong Shading given the voxel color (material color), gradient,
-     * light vector and view vector.
+     * Compute Phong Shading given the voxel color (material color), gradient, light
+     * vector and view vector.
      *
      * @param voxel_color Voxel color (material color).
-     * @param gradient Gradient voxel.
+     * @param gradient    Gradient voxel.
      * @param lightVector Light vector.
-     * @param rayVector View vector.
+     * @param rayVector   View vector.
      * @return Computed color for Phong Shading.
      */
     private TFColor computePhongShading(TFColor voxel_color, VoxelGradient gradient, double[] lightVector,
@@ -472,7 +529,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * @param viewMatrix
      */
     void raycast(double[] viewMatrix) {
-        //data allocation
+        // data allocation
         double[] viewVec = new double[3];
         double[] uVec = new double[3];
         double[] vVec = new double[3];
@@ -490,24 +547,26 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         resetImage();
 
         // vector uVec and vVec define a plane through the origin,
-        // perpendicular to the view vector viewVec which is going from the view point towards the object
-        // uVec contains the up vector of the camera in world coordinates (image vertical)
+        // perpendicular to the view vector viewVec which is going from the view point
+        // towards the object
+        // uVec contains the up vector of the camera in world coordinates (image
+        // vertical)
         // vVec contains the horizontal vector in world coordinates (image horizontal)
         VectorMath.setVector(viewVec, viewMatrix[2], viewMatrix[6], viewMatrix[10]);
         VectorMath.setVector(uVec, viewMatrix[0], viewMatrix[4], viewMatrix[8]);
         VectorMath.setVector(vVec, viewMatrix[1], viewMatrix[5], viewMatrix[9]);
 
-        // We get the size of the image/texture we will be puting the result of the 
+        // We get the size of the image/texture we will be puting the result of the
         // volume rendering operation.
         int imageW = image.getWidth();
         int imageH = image.getHeight();
 
         int[] imageCenter = new int[2];
-        // Center of the image/texture 
+        // Center of the image/texture
         imageCenter[0] = imageW / 2;
         imageCenter[1] = imageH / 2;
 
-        //The rayVector is pointing towards the scene
+        // The rayVector is pointing towards the scene
         double[] rayVector = new double[3];
         rayVector[0] = -viewVec[0];
         rayVector[1] = -viewVec[1];
@@ -520,7 +579,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // ray computation for each pixel
         for (int j = imageCenter[1] - imageH / 2; j < imageCenter[1] + imageH / 2; j += increment) {
             for (int i = imageCenter[0] - imageW / 2; i < imageCenter[0] + imageW / 2; i += increment) {
-                // compute starting points of rays in a plane shifted backwards to a position behind the data set
+                // compute starting points of rays in a plane shifted backwards to a position
+                // behind the data set
                 computePixelCoordinatesBehindFloat(pixelCoord, viewVec, uVec, vVec, i, j);
                 // compute the entry and exit point of the ray
                 computeEntryAndExit(pixelCoord, rayVector, entryPoint, exitPoint);
@@ -558,13 +618,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * {@link TransferFunction2D#radius} are in image intensity units.
      *
      * @param material_value Value of the material.
-     * @param material_r Radius of the material.
-     * @param voxelValue Voxel value.
-     * @param gradMagnitude Gradient magnitude.
+     * @param material_r     Radius of the material.
+     * @param voxelValue     Voxel value.
+     * @param gradMagnitude  Gradient magnitude.
      * @return
      */
-    public double computeOpacity2DTF(double material_value, double material_r,
-            double voxelValue, double gradMagnitude) {
+    public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
+            double gradMagnitude) {
 
         double opacity = 0.0;
 
@@ -596,8 +656,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     }
 
     /**
-     * Sets the volume to be visualized. It creates the Image buffer for the
-     * size of the volume. Initializes the transfers functions
+     * Sets the volume to be visualized. It creates the Image buffer for the size of
+     * the volume. Initializes the transfers functions
      *
      * @param vol Volume to be visualized.
      */
@@ -610,8 +670,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // set up image for storing the resulting rendering
         // the image width and height are equal to the length of the volume diagonal
-        int imageSize = (int) Math.floor(Math.sqrt(vol.getDimX() * vol.getDimX() + vol.getDimY() * vol.getDimY()
-                + vol.getDimZ() * vol.getDimZ()));
+        int imageSize = (int) Math.floor(Math
+                .sqrt(vol.getDimX() * vol.getDimX() + vol.getDimY() * vol.getDimY() + vol.getDimZ() * vol.getDimZ()));
         if (imageSize % 2 != 0) {
             imageSize = imageSize + 1;
         }
@@ -896,13 +956,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         gl.glEnable(GL.GL_BLEND);
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
-        double D = Math.sqrt(Math.pow(volume.getDimX(), 2) + Math.pow(volume.getDimY(), 2) + Math.pow(volume.getDimZ(), 2)) / 2;
+        double D = Math.sqrt(
+                Math.pow(volume.getDimX(), 2) + Math.pow(volume.getDimY(), 2) + Math.pow(volume.getDimZ(), 2)) / 2;
 
         gl.glBegin(GL.GL_LINE_LOOP);
-        gl.glVertex3d(-_planeU[0] * D - _planeV[0] * D, -_planeU[1] * D - _planeV[1] * D, -_planeU[2] * D - _planeV[2] * D);
-        gl.glVertex3d(_planeU[0] * D - _planeV[0] * D, _planeU[1] * D - _planeV[1] * D, _planeU[2] * D - _planeV[2] * D);
-        gl.glVertex3d(_planeU[0] * D + _planeV[0] * D, _planeU[1] * D + _planeV[1] * D, _planeU[2] * D + _planeV[2] * D);
-        gl.glVertex3d(-_planeU[0] * D + _planeV[0] * D, -_planeU[1] * D + _planeV[1] * D, -_planeU[2] * D + _planeV[2] * D);
+        gl.glVertex3d(-_planeU[0] * D - _planeV[0] * D, -_planeU[1] * D - _planeV[1] * D,
+                -_planeU[2] * D - _planeV[2] * D);
+        gl.glVertex3d(_planeU[0] * D - _planeV[0] * D, _planeU[1] * D - _planeV[1] * D,
+                _planeU[2] * D - _planeV[2] * D);
+        gl.glVertex3d(_planeU[0] * D + _planeV[0] * D, _planeU[1] * D + _planeV[1] * D,
+                _planeU[2] * D + _planeV[2] * D);
+        gl.glVertex3d(-_planeU[0] * D + _planeV[0] * D, -_planeU[1] * D + _planeV[1] * D,
+                -_planeU[2] * D + _planeV[2] * D);
         gl.glEnd();
 
         gl.glDisable(GL.GL_LINE_SMOOTH);
@@ -979,12 +1044,14 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * increments.
      *
      * @param increments Vector to store the result.
-     * @param rayVector Ray vector.
+     * @param rayVector  Ray vector.
      * @param sampleStep Sample step.
      */
     private void computeIncrementsB2F(double[] increments, double[] rayVector, double sampleStep) {
-        // we compute a back to front compositing so we start increments in the oposite direction than the pixel ray
-        VectorMath.setVector(increments, -rayVector[0] * sampleStep, -rayVector[1] * sampleStep, -rayVector[2] * sampleStep);
+        // we compute a back to front compositing so we start increments in the oposite
+        // direction than the pixel ray
+        VectorMath.setVector(increments, -rayVector[0] * sampleStep, -rayVector[1] * sampleStep,
+                -rayVector[2] * sampleStep);
     }
 
     /**
@@ -1010,13 +1077,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Do NOT modify this function.
      *
-     * Computes the entry and exit of a view vector with respect the faces of
-     * the volume.
+     * Computes the entry and exit of a view vector with respect the faces of the
+     * volume.
      *
-     * @param p Point of the ray.
-     * @param viewVec Direction of the ray.
+     * @param p          Point of the ray.
+     * @param viewVec    Direction of the ray.
      * @param entryPoint Vector to store entry point.
-     * @param exitPoint Vector to store exit point.
+     * @param exitPoint  Vector to store exit point.
      */
     private void computeEntryAndExit(double[] p, double[] viewVec, double[] entryPoint, double[] exitPoint) {
 
@@ -1059,15 +1126,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      *
      * Checks if a line intersects a plane.
      *
-     * @param plane_pos Position of plane.
+     * @param plane_pos    Position of plane.
      * @param plane_normal Normal of plane.
-     * @param line_pos Position of line.
-     * @param line_dir Direction of line.
+     * @param line_pos     Position of line.
+     * @param line_dir     Direction of line.
      * @param intersection Vector to store intersection.
      * @return True if intersection happens. False otherwise.
      */
-    private static boolean intersectLinePlane(double[] plane_pos, double[] plane_normal,
-            double[] line_pos, double[] line_dir, double[] intersection) {
+    private static boolean intersectLinePlane(double[] plane_pos, double[] plane_normal, double[] line_pos,
+            double[] line_dir, double[] intersection) {
 
         double[] tmp = new double[3];
 
@@ -1103,12 +1170,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * @param ze
      * @return
      */
-    private static boolean validIntersection(double[] intersection, double xb, double xe, double yb,
-            double ye, double zb, double ze) {
+    private static boolean validIntersection(double[] intersection, double xb, double xe, double yb, double ye,
+            double zb, double ze) {
 
-        return (((xb - 0.5) <= intersection[0]) && (intersection[0] <= (xe + 0.5))
-                && ((yb - 0.5) <= intersection[1]) && (intersection[1] <= (ye + 0.5))
-                && ((zb - 0.5) <= intersection[2]) && (intersection[2] <= (ze + 0.5)));
+        return (((xb - 0.5) <= intersection[0]) && (intersection[0] <= (xe + 0.5)) && ((yb - 0.5) <= intersection[1])
+                && (intersection[1] <= (ye + 0.5)) && ((zb - 0.5) <= intersection[2])
+                && (intersection[2] <= (ze + 0.5)));
 
     }
 
@@ -1118,20 +1185,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * Checks the intersection of a line with a plane and returns entry and exit
      * points in case intersection happens.
      *
-     * @param plane_pos Position of plane.
+     * @param plane_pos    Position of plane.
      * @param plane_normal Normal vector of plane.
-     * @param line_pos Position of line.
-     * @param line_dir Direction of line.
+     * @param line_pos     Position of line.
+     * @param line_dir     Direction of line.
      * @param intersection Vector to store the intersection point.
-     * @param entryPoint Vector to store the entry point.
-     * @param exitPoint Vector to store the exit point.
+     * @param entryPoint   Vector to store the entry point.
+     * @param exitPoint    Vector to store the exit point.
      */
-    private void intersectFace(double[] plane_pos, double[] plane_normal,
-            double[] line_pos, double[] line_dir, double[] intersection,
-            double[] entryPoint, double[] exitPoint) {
+    private void intersectFace(double[] plane_pos, double[] plane_normal, double[] line_pos, double[] line_dir,
+            double[] intersection, double[] entryPoint, double[] exitPoint) {
 
-        boolean intersect = intersectLinePlane(plane_pos, plane_normal, line_pos, line_dir,
-                intersection);
+        boolean intersect = intersectLinePlane(plane_pos, plane_normal, line_pos, line_dir, intersection);
         if (intersect) {
 
             double xpos0 = 0;
@@ -1141,8 +1206,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double zpos0 = 0;
             double zpos1 = volume.getDimZ();
 
-            if (validIntersection(intersection, xpos0, xpos1, ypos0, ypos1,
-                    zpos0, zpos1)) {
+            if (validIntersection(intersection, xpos0, xpos1, ypos0, ypos1, zpos0, zpos1)) {
                 if (VectorMath.dotproduct(line_dir, plane_normal) < 0) {
                     entryPoint[0] = intersection[0];
                     entryPoint[1] = intersection[1];
@@ -1161,15 +1225,17 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      *
      * Calculates the pixel coordinate for the given parameters.
      *
-     * @param pixelCoord Vector to store the result.
+     * @param pixelCoord   Vector to store the result.
      * @param volumeCenter Location of the center of the volume.
-     * @param uVec uVector.
-     * @param vVec vVector.
-     * @param i Pixel i.
-     * @param j Pixel j.
+     * @param uVec         uVector.
+     * @param vVec         vVector.
+     * @param i            Pixel i.
+     * @param j            Pixel j.
      */
-    private void computePixelCoordinatesFloat(double pixelCoord[], double volumeCenter[], double uVec[], double vVec[], float i, float j) {
-        // Coordinates of a plane centered at the center of the volume (volumeCenter and oriented according to the plane defined by uVec and vVec
+    private void computePixelCoordinatesFloat(double pixelCoord[], double volumeCenter[], double uVec[], double vVec[],
+            float i, float j) {
+        // Coordinates of a plane centered at the center of the volume (volumeCenter and
+        // oriented according to the plane defined by uVec and vVec
         float imageCenter = image.getWidth() / 2;
         pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + volumeCenter[0];
         pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + volumeCenter[1];
@@ -1183,15 +1249,17 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * {@link RaycastRenderer#computePixelCoordinatesFloat(double[], double[], double[], double[], float, float)}
      * but for integer pixel coordinates.
      *
-     * @param pixelCoord Vector to store the result.
+     * @param pixelCoord   Vector to store the result.
      * @param volumeCenter Location of the center of the volume.
-     * @param uVec uVector.
-     * @param vVec vVector.
-     * @param i Pixel i.
-     * @param j Pixel j.
+     * @param uVec         uVector.
+     * @param vVec         vVector.
+     * @param i            Pixel i.
+     * @param j            Pixel j.
      */
-    private void computePixelCoordinates(double pixelCoord[], double volumeCenter[], double uVec[], double vVec[], int i, int j) {
-        // Coordinates of a plane centered at the center of the volume (volumeCenter and oriented according to the plane defined by uVec and vVec
+    private void computePixelCoordinates(double pixelCoord[], double volumeCenter[], double uVec[], double vVec[],
+            int i, int j) {
+        // Coordinates of a plane centered at the center of the volume (volumeCenter and
+        // oriented according to the plane defined by uVec and vVec
         int imageCenter = image.getWidth() / 2;
         pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + volumeCenter[0];
         pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + volumeCenter[1];
@@ -1201,27 +1269,33 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Do NOT modify this function.
      *
-     * Calculates the pixel coordinate for the given parameters. It calculates
-     * the coordinate having the center (0,0) of the view plane aligned with the
-     * center of the volume and moved a distance equivalent to the diagonal to
-     * make sure we are far enough.
+     * Calculates the pixel coordinate for the given parameters. It calculates the
+     * coordinate having the center (0,0) of the view plane aligned with the center
+     * of the volume and moved a distance equivalent to the diagonal to make sure we
+     * are far enough.
      *
      * @param pixelCoord Vector to store the result.
-     * @param viewVec View vector (ray).
-     * @param uVec uVector.
-     * @param vVec vVector.
-     * @param i Pixel i.
-     * @param j Pixel j.
+     * @param viewVec    View vector (ray).
+     * @param uVec       uVector.
+     * @param vVec       vVector.
+     * @param i          Pixel i.
+     * @param j          Pixel j.
      */
-    private void computePixelCoordinatesBehindFloat(double pixelCoord[], double viewVec[], double uVec[], double vVec[], float i, float j) {
+    private void computePixelCoordinatesBehindFloat(double pixelCoord[], double viewVec[], double uVec[], double vVec[],
+            float i, float j) {
         int imageCenter = image.getWidth() / 2;
-        // Pixel coordinate is calculate having the center (0,0) of the view plane aligned with the center of the volume and moved a distance equivalent
+        // Pixel coordinate is calculate having the center (0,0) of the view plane
+        // aligned with the center of the volume and moved a distance equivalent
         // to the diaganal to make sure I am far away enough.
 
-        double diagonal = Math.sqrt((volume.getDimX() * volume.getDimX()) + (volume.getDimY() * volume.getDimY()) + (volume.getDimZ() * volume.getDimZ())) / 2;
-        pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + viewVec[0] * diagonal + volume.getDimX() / 2.0;
-        pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + viewVec[1] * diagonal + volume.getDimY() / 2.0;
-        pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter) + viewVec[2] * diagonal + volume.getDimZ() / 2.0;
+        double diagonal = Math.sqrt((volume.getDimX() * volume.getDimX()) + (volume.getDimY() * volume.getDimY())
+                + (volume.getDimZ() * volume.getDimZ())) / 2;
+        pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + viewVec[0] * diagonal
+                + volume.getDimX() / 2.0;
+        pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + viewVec[1] * diagonal
+                + volume.getDimY() / 2.0;
+        pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter) + viewVec[2] * diagonal
+                + volume.getDimZ() / 2.0;
     }
 
     /**
@@ -1232,20 +1306,26 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * but for integer pixel coordinates.
      *
      * @param pixelCoord Vector to store the result.
-     * @param viewVec View vector (ray).
-     * @param uVec uVector.
-     * @param vVec vVector.
-     * @param i Pixel i.
-     * @param j Pixel j.
+     * @param viewVec    View vector (ray).
+     * @param uVec       uVector.
+     * @param vVec       vVector.
+     * @param i          Pixel i.
+     * @param j          Pixel j.
      */
-    private void computePixelCoordinatesBehind(double pixelCoord[], double viewVec[], double uVec[], double vVec[], int i, int j) {
+    private void computePixelCoordinatesBehind(double pixelCoord[], double viewVec[], double uVec[], double vVec[],
+            int i, int j) {
         int imageCenter = image.getWidth() / 2;
-        // Pixel coordinate is calculate having the center (0,0) of the view plane aligned with the center of the volume and moved a distance equivalent
+        // Pixel coordinate is calculate having the center (0,0) of the view plane
+        // aligned with the center of the volume and moved a distance equivalent
         // to the diaganal to make sure I am far away enough.
 
-        double diagonal = Math.sqrt((volume.getDimX() * volume.getDimX()) + (volume.getDimY() * volume.getDimY()) + (volume.getDimZ() * volume.getDimZ())) / 2;
-        pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + viewVec[0] * diagonal + volume.getDimX() / 2.0;
-        pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + viewVec[1] * diagonal + volume.getDimY() / 2.0;
-        pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter) + viewVec[2] * diagonal + volume.getDimZ() / 2.0;
+        double diagonal = Math.sqrt((volume.getDimX() * volume.getDimX()) + (volume.getDimY() * volume.getDimY())
+                + (volume.getDimZ() * volume.getDimZ())) / 2;
+        pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter) + viewVec[0] * diagonal
+                + volume.getDimX() / 2.0;
+        pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter) + viewVec[1] * diagonal
+                + volume.getDimY() / 2.0;
+        pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter) + viewVec[2] * diagonal
+                + volume.getDimZ() / 2.0;
     }
 }
