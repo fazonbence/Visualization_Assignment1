@@ -625,9 +625,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
             double gradMagnitude) {
-
         double opacity = 0.0;
-
+        double radius = material_r / gradients.getMaxGradientMagnitude();
         // TODO 8: Implement weight based opacity.
         return opacity;
     }
