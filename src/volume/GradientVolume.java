@@ -53,12 +53,30 @@ public class GradientVolume {
      * paper.
      */
     private void compute() {
-        // TODO 4: Implement gradient computation.
+        //TODO 4: Implement gradient computation.
+
+
         // this just initializes all gradients to the vector (0,0,0)
         for (int i = 0; i < data.length; i++) {
             data[i] = zero;
         }
 
+        //FLAG we don't have to compute the edges, however we need to give an explanation for this
+        //FLAG is s the voxel value?
+        //Computes the gradients for the vector
+        for(int x = 1;x<dimX-1;x++){
+            for(int y = 1;y<dimY-1;y++){
+                for(int z = 01;z<dimZ-1;z++){
+                   // System.out.println(volume.getVoxel(x, y, z));
+
+                    float s_x =(float) 0.5*(volume.getVoxel(x+1,y,z)-volume.getVoxel(x-1,y,z));
+                    float s_y = (float) 0.5*(volume.getVoxel(x,y+1,z)-volume.getVoxel(x,y-1,z));
+                    float s_z = (float) 0.5*(volume.getVoxel(x,y,z+1)-volume.getVoxel(x,y,z-1));
+                    VoxelGradient result = new VoxelGradient(s_x, s_y, s_z);
+                    setGradient(x, y, z, result);
+                }
+            }
+        }
     }
 
     public double getMaxGradientMagnitude() {
