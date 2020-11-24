@@ -264,7 +264,59 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     private VoxelGradient getGradientTrilinear(double[] coord) {
         // TODO 6: Implement Tri-linear interpolation for gradients
-        return ZERO_GRADIENT;
+
+        // get gradient of 8 nearest points
+        int nPoints = 8;
+        double[][] nearestPoints = new double[nPoints][3];
+
+        boolean[] binary = new boolean[3];
+
+        // getting the nearest points in the "cube"
+        for (int i = 0; i < nPoints; i++) {
+            binary = convertToBinary(i); // we get the nearest known datapoints by flooring and ceiling the inputs
+                                         // coordinates
+            // FLAG they might be in the wrong order
+            nearestPoints[i][0] = binary[2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][1] = binary[1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
+            nearestPoints[i][2] = binary[0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+        }
+
+        // Calculating portions
+        double alpha = getProportion(coord[0], nearestPoints[0][0]);
+        double beta = getProportion(coord[1], nearestPoints[0][1]);
+        double gamma = getProportion(coord[2], nearestPoints[0][2]);
+
+        float[] gxs = new float[nPoints];
+        float[] gys = new float[nPoints];
+        float[] gzs = new float[nPoints];
+
+        // get components of the gradients of the nearest data points
+        for (int i = 0; i < nPoints; i++) {
+            VoxelGradient vg = gradients.getGradient((int) nearestPoints[i][0], (int) nearestPoints[i][1],
+                    (int) nearestPoints[i][2]);
+            gxs[i] = vg.x;
+            gys[i] = vg.z;
+            gzs[i] = vg.z;
+        }
+
+        short resultX = 0;
+        short resultY = 0;
+        short resultZ = 0;
+        // Tri-linear interpolation for each of the components
+        for (int i = 0; i < nPoints; i++) {
+            binary = convertToBinary(i);
+            resultX += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+                    * gxs[i];
+            resultY += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+                    * gys[i];
+            resultZ += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+                    * gzs[i];
+        }
+
+        VoxelGradient result = new VoxelGradient(resultX, resultY, resultZ);
+
+        return result;
+
     }
 
     /**
