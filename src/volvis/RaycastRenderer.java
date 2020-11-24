@@ -428,7 +428,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         return color;
     }
 
-    static int count = 0;//FLAG marked for termination 
+    
     private double BackToFront(double colorval,double prevcolorval,  double tau) {
         return (1-tau)*colorval+(tau)*prevcolorval;
     }
@@ -487,32 +487,21 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
                 
                 do {
-                    int value = getVoxel(currentPos);//Flag need needVoxelTrilinear
+                    int value = getVoxelTrilinear(currentPos);//Flag need needVoxelTrilinear //It should be optimalized
                     colorAux=tFuncFront.getColor(value);                   
 
 
                     voxel_color.r=BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g=BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b=BackToFront(voxel_color.b, colorAux.b, colorAux.a);
-                    count++;
-                    if(count%10000<3)
-                    {
-                        //System.out.println(currentPos[0]+" "+currentPos[1]+" "+currentPos[2]+" ");
-                        System.out.println(colorAux);
-                    }
-                    //how should I add colors?
-                    //colorAux = colorAux+voxel_color;
-                    /*if(!voxel_color.toString().equals("(1.0, 0.0, 0.0, 1.0)"))
-                    {
-                        System.out.print(voxel_color);
-                    }*/                
+                                                 
                     //setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                opacity=0.9;//flag
+                opacity=1;//flag
 
 
                
