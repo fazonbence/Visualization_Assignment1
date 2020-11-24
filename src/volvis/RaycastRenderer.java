@@ -148,11 +148,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * @param coord Pixel coordinate in 3D space of the voxel we want to get.
      * @return The voxel value.
      */
-    private short getVoxel(double[] coord) {
-        /*
-         * System.out.println("####################"); for (double element : coord) {
-         * System.out.println(element); }
-         */
+    private short getVoxel(double[] coord) {       
         // Get coordinates
         double dx = coord[0], dy = coord[1], dz = coord[2];
 
@@ -592,6 +588,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         case COMPOSITING:
                         case TRANSFER2D:
                             val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep);
+                            
                             break;
                         case MIP:
                             val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
@@ -627,6 +624,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double gradMagnitude) {
         double opacity = 0.0;
         double radius = material_r / gradients.getMaxGradientMagnitude();
+        System.out.print("hello there");
         // TODO 8: Implement weight based opacity.
         return opacity;
     }

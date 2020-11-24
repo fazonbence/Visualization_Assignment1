@@ -68,7 +68,6 @@ public class GradientVolume {
             for(int y = 1;y<dimY-1;y++){
                 for(int z = 01;z<dimZ-1;z++){
                    // System.out.println(volume.getVoxel(x, y, z));
-
                     float s_x =(float) 0.5*(volume.getVoxel(x+1,y,z)-volume.getVoxel(x-1,y,z));
                     float s_y = (float) 0.5*(volume.getVoxel(x,y+1,z)-volume.getVoxel(x,y-1,z));
                     float s_z = (float) 0.5*(volume.getVoxel(x,y,z+1)-volume.getVoxel(x,y,z-1));
