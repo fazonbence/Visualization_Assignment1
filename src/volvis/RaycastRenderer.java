@@ -410,7 +410,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // source of the light)
         // another light vector would be possible
         VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
-
+        
         // TODO 3: Implement isosurface rendering.
         // Initialization of the colors as floating point values
         double r, g, b;
@@ -448,8 +448,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // the light vector is directed toward the view point (which is the source of
         // the light)
         // another light vector would be possible
-        VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
 
+        //new lightvector scaled w samplesize
+        //VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
+        VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
+
+        //base init
         // Initialization of the colors as floating point values
         double r, g, b;
         r = g = b = 0.0;
@@ -459,16 +463,43 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor voxel_color = new TFColor();
         TFColor colorAux = new TFColor();
 
+        
+
+        //init for composite
+        //maybe needed for the 2DTransfer as well let me know if don't -Ben
+        double distance = VectorMath.distance(entryPoint, exitPoint);
+        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        double[] currentPos = new double[3];
+        VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
+
+
+
         // TODO 2: To be Implemented this function. Now, it just gives back a constant
         // color depending on the mode
         switch (modeFront) {
             case COMPOSITING:
                 // 1D transfer function
-                voxel_color.r = 1;
+
+
+                do {
+                    double value = getVoxel(currentPos);//div255//Flag Dividing?//need needVoxelTrilinear
+                    voxel_color=tFuncFront.getColor((int)value);
+                    /*if(!voxel_color.toString().equals("(1.0, 0.0, 0.0, 1.0)"))
+                    {
+                        System.out.print(voxel_color);
+                    }*/
+                    
+                    
+                    nrSamples--;
+                } while (nrSamples > 0);
+
+
+
+               /* voxel_color.r = 1;
                 voxel_color.g = 0;
                 voxel_color.b = 0;
-                voxel_color.a = 1;
-                opacity = 1;
+                voxel_color.a = 1;*/
+                opacity = 0.5;
                 break;
             case TRANSFER2D:
                 // 2D transfer function
