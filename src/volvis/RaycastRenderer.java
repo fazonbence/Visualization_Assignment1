@@ -428,6 +428,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         return color;
     }
 
+    static int count = 0;//FLAG marked for termination 
+    private double BackToFront(double colorval,double prevcolorval,  double tau) {
+        return (1-tau)*colorval+(tau)*prevcolorval;
+    }
+    
     /**
      *
      * Updates {@link #image} attribute (result of rendering) using the
@@ -460,8 +465,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double alpha = 0.0;
         double opacity = 0;
 
-        TFColor voxel_color = new TFColor();
-        TFColor colorAux = new TFColor();
+        TFColor voxel_color = new TFColor(0,0,0,0);
+        TFColor colorAux = new TFColor(0,0,0,0);
 
         
 
@@ -471,7 +476,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
-
+        
 
 
         // TODO 2: To be Implemented this function. Now, it just gives back a constant
@@ -480,26 +485,37 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             case COMPOSITING:
                 // 1D transfer function
 
-
+                
                 do {
-                    double value = getVoxel(currentPos);//div255//Flag Dividing?//need needVoxelTrilinear
-                    voxel_color=tFuncFront.getColor((int)value);
+                    int value = getVoxel(currentPos);//Flag need needVoxelTrilinear
+                    colorAux=tFuncFront.getColor(value);                   
+
+
+                    voxel_color.r=BackToFront(voxel_color.r, colorAux.r, colorAux.a);
+                    voxel_color.g=BackToFront(voxel_color.g, colorAux.g, colorAux.a);
+                    voxel_color.b=BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+                    count++;
+                    if(count%10000<3)
+                    {
+                        //System.out.println(currentPos[0]+" "+currentPos[1]+" "+currentPos[2]+" ");
+                        System.out.println(colorAux);
+                    }
+                    //how should I add colors?
+                    //colorAux = colorAux+voxel_color;
                     /*if(!voxel_color.toString().equals("(1.0, 0.0, 0.0, 1.0)"))
                     {
                         System.out.print(voxel_color);
-                    }*/
-                    
-                    
+                    }*/                
+                    //setting a new pos
+                    for (int i = 0; i < 3; i++) {
+                        currentPos[i] += lightVector[i];
+                    }
                     nrSamples--;
                 } while (nrSamples > 0);
+                opacity=0.9;//flag
 
 
-
-               /* voxel_color.r = 1;
-                voxel_color.g = 0;
-                voxel_color.b = 0;
-                voxel_color.a = 1;*/
-                opacity = 0.5;
+               
                 break;
             case TRANSFER2D:
                 // 2D transfer function
