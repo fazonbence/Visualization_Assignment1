@@ -461,7 +461,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // We define the light vector as directed toward the view point (which is the
         // source of the light)
         // another light vector would be possible
-        VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
+        // VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
+        VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
+                rayVector[2] * sampleStep);
 
         // TODO 3: Implement isosurface rendering.
         // Initialization of the colors as floating point values
@@ -486,10 +488,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             }
             nrSamples--;
             if ((float) voxelvalue < isoValue) {
-                opacity = 0;// flag
+                // opacity = 0;// flag
                 alpha = 0.0;
             } else {
-                opacity = 1;// flag
+                // opacity = 1;// flag
                 alpha = 1.0;
             }
 
@@ -648,8 +650,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // FLAG different resolution for different methods seems like a good idea, gonna
         // ask on the Q&A
         if (interactiveMode) {
-            increment = 2;
-            sampleStep = 31;
+            increment = 1;
+            sampleStep = 5;
         }
 
         // reset the image to black
