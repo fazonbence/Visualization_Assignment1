@@ -470,11 +470,36 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double alpha = 0.0;
         double opacity = 0;
 
+        float isoValue = isoValueFront; //
+
+        double distance = VectorMath.distance(entryPoint, exitPoint);
+        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        double[] currentPos = new double[3];
+        VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
+        int voxelvalue;
+        do {
+            voxelvalue = getVoxelTrilinear(currentPos);
+
+            // setting a new pos
+            for (int i = 0; i < 3; i++) {
+                currentPos[i] += lightVector[i];
+            }
+            nrSamples--;
+            if ((float) voxelvalue < isoValue) {
+                opacity = 0;// flag
+                alpha = 0.0;
+            } else {
+                opacity = 1;// flag
+                alpha = 1.0;
+            }
+
+        } while (nrSamples > 0 && (float) voxelvalue < isoValue);
+
         // isoColorFront contains the isosurface color from the GUI
         r = isoColorFront.r;
         g = isoColorFront.g;
         b = isoColorFront.b;
-        alpha = 1.0;
+
         // computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
@@ -534,7 +559,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // 1D transfer function
 
                 do {
-                    int value = getVoxelTrilinear(currentPos);// Flag need needVoxelTrilinear //It should be optimalized
+                    int value = getVoxelTrilinear(currentPos);
                     colorAux = tFuncFront.getColor(value);
 
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
@@ -614,17 +639,17 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] exitPoint = new double[3];
 
         // TODO 5: Limited modification is needed
-        // increment in the pixel domain in pixel units        
+        // increment in the pixel domain in pixel units
         int increment = 1;
         // sample step in voxel units
         int sampleStep = 1;
 
-        //Decrease the resolution while rotating the image
-        //FLAG different resolution for different methods seems like a good idea, gonna ask on the Q&A
-        if(interactiveMode)
-        {
-            increment=2;
-            sampleStep=31;
+        // Decrease the resolution while rotating the image
+        // FLAG different resolution for different methods seems like a good idea, gonna
+        // ask on the Q&A
+        if (interactiveMode) {
+            increment = 2;
+            sampleStep = 31;
         }
 
         // reset the image to black
