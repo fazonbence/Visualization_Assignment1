@@ -614,10 +614,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] exitPoint = new double[3];
 
         // TODO 5: Limited modification is needed
-        // increment in the pixel domain in pixel units
+        // increment in the pixel domain in pixel units        
         int increment = 1;
         // sample step in voxel units
         int sampleStep = 1;
+
+        //Decrease the resolution while rotating the image
+        //FLAG different resolution for different methods seems like a good idea, gonna ask on the Q&A
+        if(interactiveMode)
+        {
+            increment=2;
+            sampleStep=31;
+        }
 
         // reset the image to black
         resetImage();
