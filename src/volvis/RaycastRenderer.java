@@ -740,6 +740,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double radius = material_r / gradients.getMaxGradientMagnitude();
         System.out.print("hello there");
         // TODO 8: Implement weight based opacity.
+        //Decoy
         return opacity;
     }
 
