@@ -2,13 +2,14 @@ package volvis;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.test.junit.graph.demos.GPURegionGLListener01;
+/* import com.jogamp.opengl.test.junit.graph.demos.GPURegionGLListener01; */
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 import gui.RaycastRendererPanel;
 import gui.TransferFunction2DEditor;
 import gui.TransferFunctionEditor;
 import java.awt.image.BufferedImage;
+import static java.lang.Math.abs;
 
 import util.TFChangeListener;
 import util.VectorMath;
@@ -737,10 +738,24 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
             double gradMagnitude) {
         double opacity = 0.0;
-        double radius = material_r / gradients.getMaxGradientMagnitude();
-        System.out.print("hello there");
+       /* double radius = material_r / gradients.getMaxGradientMagnitude();  */
+         System.out.print("hello there"); 
+         double absolutevalue = abs((voxelValue - material_value)/(gradMagnitude));
+         double opacity1 = 1 - ((1/material_r)*(absolutevalue));
+
+         if(gradMagnitude == 0 && material_value == voxelValue){
+        
+            opacity = 1.0;
+         }
+         else if(gradMagnitude > 0 && material_value - (material_r * abs(gradMagnitude)) <= voxelValue && voxelValue <= material_value - (material_r * abs(gradMagnitude))){
+
+            opacity = opacity1;      
+         }
+         else{
+
+            opacity = 0.0 ;
+         }   
         // TODO 8: Implement weight based opacity.
-        //Decoy
         return opacity;
     }
 
