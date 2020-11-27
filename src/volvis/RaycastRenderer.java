@@ -737,17 +737,20 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
             double gradMagnitude) {
+        
         double opacity = 0.0;
-       /* double radius = material_r / gradients.getMaxGradientMagnitude();  */
-         System.out.print("hello there"); 
-         double absolutevalue = abs((voxelValue - material_value)/(gradMagnitude));
-         double opacity1 = 1 - ((1/material_r)*(absolutevalue));
+        
+        double radius = material_r / gradients.getMaxGradientMagnitude();  
+        /*System.out.print("hello there"); */
+        
+        double absolutevalue = abs((voxelValue - material_value)/(gradMagnitude));
+        double opacity1 = 1 - ((1/radius)*(absolutevalue));
 
          if(gradMagnitude == 0 && material_value == voxelValue){
         
             opacity = 1.0;
          }
-         else if(gradMagnitude > 0 && material_value - (material_r * abs(gradMagnitude)) <= voxelValue && voxelValue <= material_value - (material_r * abs(gradMagnitude))){
+         else if(gradMagnitude > 0 && material_value - (radius*abs(gradMagnitude)) <= voxelValue && voxelValue <= material_value - (radius*abs(gradMagnitude))){
 
             opacity = opacity1;      
          }
