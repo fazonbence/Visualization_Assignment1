@@ -312,7 +312,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             VoxelGradient vg = gradients.getGradient((int) nearestPoints[i][0], (int) nearestPoints[i][1],
                     (int) nearestPoints[i][2]);
             gxs[i] = vg.x;
-            gys[i] = vg.z;
+            gys[i] = vg.y;
             gzs[i] = vg.z;
         }
 
