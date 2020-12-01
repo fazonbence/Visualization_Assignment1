@@ -492,7 +492,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double opacity = 0;
 
         double distance = VectorMath.distance(entryPoint, exitPoint);
-        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
         int voxelvalue;
@@ -504,9 +504,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 currentPos[i] += lightVector[i];
             }
             nrSamples--;
-            if ((float) voxelvalue < isoValue) {
-                alpha = 0.0;
-            } else {
+            if ((float) voxelvalue >= isoValue) {
                 alpha = 1.0;
             }
 
