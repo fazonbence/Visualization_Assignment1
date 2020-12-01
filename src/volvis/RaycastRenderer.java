@@ -480,7 +480,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // We define the light vector as directed toward the view point (which is the
         // source of the light)
         // another light vector would be possible
-        // VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
         VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
                 rayVector[2] * sampleStep);
 
@@ -513,9 +512,44 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         r = isoColor.r;
         g = isoColor.g;
         b = isoColor.b;
+        int color;
+
+        if (alpha == 0) {
+            color = computePackedPixelColor(0, 0, 0, 0);
+            return color;
+        }
+        if (!shadingMode) {
+            r = isoColor.r;
+            g = isoColor.g;
+            b = isoColor.b;
+
+            color = computePackedPixelColor(r, g, b, alpha);
+
+        } else {
+            // VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1],
+            // entryPoint[2]);
+            // for (int i = 0; i < 3; i++) {
+            // currentPos[i] += lightVector[i];
+            // }
+            for (int i = 0; i < 3; i++) {
+                currentPos[i] -= lightVector[i];
+            }
+            VoxelGradient gradient = getGradient(currentPos);
+
+            TFColor phongColor = computePhongShading(isoColorFront, gradient, lightVector, rayVector);
+
+            color = computePackedPixelColor(phongColor.r, phongColor.g, phongColor.b, alpha);
+        }
 
         // computes the color
-        int color = computePackedPixelColor(r, g, b, alpha);
+        //
+
+        // System.out.println(entryPoint[0] + " ," + entryPoint[1] + " ," +
+        // entryPoint[2]);
+        // System.out.println(exitPoint[0] + " ," + exitPoint[1] + " ," + exitPoint[2]);
+        // System.out.println(currentPos[0] + " ," + currentPos[1] + " ," +
+        // currentPos[2]);
+
         return color;
     }
 
@@ -625,11 +659,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         if (shadingMode) {
             // Shading mode on
-            voxel_color.r = 1;
-            voxel_color.g = 0;
-            voxel_color.b = 1;
-            voxel_color.a = 1;
-            opacity = 1;
+            // VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1],
+            // entryPoint[2]);
+
+            // VoxelGradient gradient = getGradient(currentPos);
+
+            // TFColor phongColor = computePhongShading(voxel_color, gradient, lightVector,
+            // rayVector);
+            // voxel_color.r = phongColor.r;
+            // voxel_color.g = phongColor.g;
+            // voxel_color.b = phongColor.b;
+            // voxel_color.a = phongColor.a;
+            // opacity = 1;
         }
 
         r = voxel_color.r;
@@ -656,8 +697,74 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double[] rayVector) {
 
         // TODO 7: Implement Phong Shading.
-        TFColor color = new TFColor(0, 0, 0, 1);
 
+        TFColor white = new TFColor(1, 1, 1, voxel_color.a);
+        // if (!(gradient.x == 0 && gradient.y == 0 && gradient.z == 0)) {
+        // return voxel_color;
+        // }
+
+        double[] N = new double[3];
+        VectorMath.setVector(N, gradient.x, gradient.y, gradient.z); // ?????
+
+        // get unit vector
+        double[] Nnorm = new double[3];
+        if (N[0] == 0 && N[1] == 0 && N[2] == 0) {
+            Nnorm[0] = N[0];
+            Nnorm[1] = N[1];
+            Nnorm[2] = N[2];
+        } else {
+            VectorMath.normalize(N, Nnorm);
+        }
+
+        // invert lightVector and rayVector
+        // VectorMath.difference(new double[3], lightVector, lightVector);
+        VectorMath.difference(new double[3], rayVector, rayVector);
+
+        double kAmbient = 0.1;
+        double kDiffuse = 0.7;
+        double kSpecular = 0.2;
+
+        double LN = VectorMath.dotproduct(lightVector, Nnorm);
+        if (LN < 0) {
+            // System.out.println("black");
+            return new TFColor(0f, 0f, 0f, 1f);
+
+        }
+
+        double[] H = new double[3];
+        VectorMath.addition(lightVector, lightVector, H);
+        VectorMath.normalize(H, H);
+
+        double NH = VectorMath.dotproduct(Nnorm, H);
+        if (LN < 0) {
+            // System.out.println("black");
+            return new TFColor(0f, 0f, 0f, 1f);
+        }
+
+        double Ir = voxel_color.r * kAmbient + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ig = voxel_color.g * kAmbient + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ib = voxel_color.b * kAmbient + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+
+        TFColor color = new TFColor(Ir, Ig, Ib, 1);
+
+        // System.out.println("gradient");
+
+        // System.out.println(gradient.x + " ," + gradient.y + " ," + gradient.z);
+
+        /*
+         * System.out.println("light"); for (int i = 0; i < 3; i++) {
+         * System.out.println(lightVector[i]); } System.out.println("ray"); for (int i =
+         * 0; i < 3; i++) { System.out.println(rayVector[i]); }
+         */
+
+        // System.out.println("dot: " + LN);
+
+        // if dot product is negative return TFColor(0f, 0f, 0f, 1f)
+
+        // Do you apply any changes to the color or gradient before passing it to the
+        // shading function?
+        // Yes, if all R, G and B are 0, we set the alpha/opacity to 0, otherwise set it
+        // to the computed alpha
         return color;
     }
 
