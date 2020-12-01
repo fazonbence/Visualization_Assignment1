@@ -264,6 +264,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private VoxelGradient getGradientTrilinear(double[] coord) {
         // TODO 6: Implement Tri-linear interpolation for gradients
 
+        double dx = coord[0], dy = coord[1], dz = coord[2];
+
+        // Verify they are inside the volume gradient
+        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2) || dz < 0
+                || dz > (gradients.getDimZ() - 2)) {
+
+            // If not, just return a zero gradient
+            return ZERO_GRADIENT;
+        }
+
         // get gradient of 8 nearest points
         int nPoints = 8;
         double[][] nearestPoints = new double[nPoints][3];
