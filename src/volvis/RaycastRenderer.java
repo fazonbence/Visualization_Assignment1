@@ -34,6 +34,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     *Stores the first 8 number in binary format
     */
     private boolean[][] binaryNumbers = new boolean[9][3];
+
+    /**
+     * Stores the 8 nearest points to the trilinear interpolation
+     */
+    //creating these was the bottleneck
+    private double[][] nearestPoints = new double[8][3];// [points][coordinate x-y-z]
     /**
      * Rendered image.
      */
@@ -191,6 +197,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         return Math.abs(x - x0);// since we know that distance is 1
     }
 
+    
     /**
      * Gets the corresponding voxel using Tri-linear Interpolation.
      *
@@ -200,9 +207,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private short getVoxelTrilinear(double[] coord) {
         // TODO 1: Implement Tri-Linear interpolation and use it in your code
         int nPoints = 8;
-        double[][] nearestPoints = new double[nPoints][3];// [points][coordinate x-y-z]
-
-        boolean[] binary = new boolean[3];
+        
 
         // getting the nearest points in the "cube"
         for (int i = 0; i < nPoints; i++) {
