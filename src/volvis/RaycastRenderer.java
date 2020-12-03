@@ -219,12 +219,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double beta = getProportion(coord[1], nearestPoints[0][1]);
         double gamma = getProportion(coord[2], nearestPoints[0][2]);
 
+        /*double alpha = Math.abs(coord[0] - nearestPoints[0][0]);
+        double beta =Math.abs(coord[1] - nearestPoints[0][1]);
+        double gamma = Math.abs(coord[2] - nearestPoints[0][2]);*/
+        //
+
         short result = 0;
         // Tri-linear interpolation
         for (int i = 0; i < nPoints; i++) {
             result += (binaryNumbers[i][0] ? alpha : 1 - alpha) * (binaryNumbers[i][1] ? beta : 1 - beta) * (binaryNumbers[i][2] ? gamma : 1 - gamma)
                     * getVoxel(nearestPoints[i]);
         }
+        
         // instead of getVoxel().
         return result;
     }
