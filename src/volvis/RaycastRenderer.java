@@ -290,9 +290,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // get gradient of 8 nearest points
         int nPoints = 8;
-        double[][] nearestPoints = new double[nPoints][3];
+       // double[][] nearestPoints = new double[nPoints][3];
 
-        boolean[] binary = new boolean[3];
+        //boolean[] binary = new boolean[3];
 
         // getting the nearest points in the "cube"
         for (int i = 0; i < nPoints; i++) {
