@@ -8,6 +8,7 @@ import gui.RaycastRendererPanel;
 import gui.TransferFunction2DEditor;
 import gui.TransferFunctionEditor;
 import java.awt.image.BufferedImage;
+import static java.lang.Math.abs;
 
 import util.TFChangeListener;
 import util.VectorMath;
@@ -105,17 +106,17 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * Cutting plane normal vector.
      */
     private final double[] planeNorm = new double[] { 0d, 0d, 1d };
-
+    
     /**
      * Cutting plane point.
      */
     private final double[] planePoint = new double[] { 0d, 0d, 0d };
-
+    
     /**
      * Back mode of our raycast for cutting plane.
      */
     private RaycastMode modeBack;
-
+    
     /**
      * Iso value to use in Isosurface rendering for cutting plane.
      */
@@ -601,11 +602,29 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 break;
             case TRANSFER2D:
                 // 2D transfer function
+                
+                 do {
+                    int value = getVoxelTrilinear(currentPos);
+                    colorAux = tFuncFront.getColor(value);
+
+                    voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
+                    voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
+                    voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+
+                    // setting a new pos
+                    for (int i = 0; i < 3; i++) {
+                        currentPos[i] += lightVector[i];
+                    }
+                    nrSamples--;
+                } while (nrSamples > 0);
+                opacity = 1;// flag
+                
                 voxel_color.r = 0;
                 voxel_color.g = 1;
                 voxel_color.b = 0;
                 voxel_color.a = 1;
                 opacity = 1;
+                computeOpacity2DTF(tFunc2DFront.baseintensity,tFunc2DFront.radius,value,gradMagnitude);
                 break;
         }
 
@@ -718,9 +737,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // compute the entry and exit point of the ray
                 computeEntryAndExit(pixelCoord, rayVector, entryPoint, exitPoint);
 
+             double[] initial={0,0,0} ;
+             VectorMath.difference(entryPoint,planePoint,initial);
+             double cuttingpoint = VectorMath.dotproduct(planeNorm,initial);
+            /* System.out.println(cuttingpoint); */
+
+                                     int val = 0;
                 // TODO 9: Implement logic for cutting plane.
-                if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
-                    int val = 0;
+                if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {  
+                    if(cuttingpoint>0){
                     switch (modeFront) {
                         case COMPOSITING:
                         case TRANSFER2D:
@@ -733,17 +758,32 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                             val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
                             break;
                     }
+                }
+                    else if(cuttingpoint<0){
+                    switch (modeBack) {
+                        case COMPOSITING:
+                        case TRANSFER2D:
+                            val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep);
+                            break;
+                        case MIP:
+                            val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
+                            break;
+                        case ISO_SURFACE:
+                            val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+                            break;
+                    }
+                }   
+                }
                     for (int ii = i; ii < i + increment; ii++) {
                         for (int jj = j; jj < j + increment; jj++) {
-                            image.setRGB(ii, jj, val);
+                            image.setRGB(ii, jj,val);
                         }
                     }
                 }
 
             }
         }
-    }
-
+ 
     /**
      * Computes the opacity based on the value of the pixel and values of the
      * triangle widget. {@link #tFunc2DFront} contains the values of the base
@@ -758,9 +798,27 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
             double gradMagnitude) {
+        
         double opacity = 0.0;
-        double radius = material_r / gradients.getMaxGradientMagnitude();
-        System.out.print("hello there");
+        
+        double radius = material_r / gradients.getMaxGradientMagnitude();  
+        /*System.out.print("hello there"); */
+        
+        double absolutevalue = abs((voxelValue - material_value)/(gradMagnitude));
+        double opacity1 = 1 - ((1/radius)*(absolutevalue));
+
+         if(gradMagnitude == 0 && material_value == voxelValue){
+        
+            opacity = 1.0;
+         }
+         else if(gradMagnitude > 0 && material_value - (radius*abs(gradMagnitude)) <= voxelValue && voxelValue <= material_value - (radius*abs(gradMagnitude))){
+
+            opacity = opacity1;      
+         }
+         else{
+
+            opacity = 0.0 ;
+         }   
         // TODO 8: Implement weight based opacity.
         return opacity;
     }
@@ -840,6 +898,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.setVector(planePoint, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
 
         System.out.println("Finished initialization of RaycastRenderer");
+        /*System.out.println(planePoint);
+        System.out.println(planeNorm);*/
     }
 
     /**
