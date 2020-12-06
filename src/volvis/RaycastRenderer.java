@@ -542,7 +542,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // another light vector would be possible
 
         // new lightvector scaled w samplesize
-        // VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
         VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
                 rayVector[2] * sampleStep);
 
@@ -557,14 +556,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor colorAux = new TFColor(0, 0, 0, 0);
 
         // init for composite
-        // maybe needed for the 2DTransfer as well let me know if don't -Ben
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
-        // TODO 2: To be Implemented this function. Now, it just gives back a constant
-        // color depending on the mode
+        // TODO 2: To be Implemented this function.
         RaycastMode mode = cuttingpoint > 0 ? modeFront : modeBack;
 
         switch (mode) {
@@ -572,6 +569,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // 1D transfer function
                 do {
                     int value = getVoxelTrilinear(currentPos);
+
+                    //Deciding which transfer function to use to get the color
                     if (cuttingPlaneMode) {
                         colorAux = (cuttingpoint > 0 ? tFuncFront : tFuncBack).getColor(value);
                     } else {
@@ -594,6 +593,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // 2D transfer function
                 do {
                     int value = getVoxelTrilinear(currentPos);
+                    //Deciding which transfer function to use
                     if (cuttingPlaneMode) {
                         colorAux = (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).color;
                         opacity = computeOpacity2DTF((cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).baseIntensity,
