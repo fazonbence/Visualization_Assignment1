@@ -700,12 +700,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         TFColor white = new TFColor(1, 1, 1, voxel_color.a);
         TFColor black = new TFColor(0, 0, 0, voxel_color.a);
-        // if (!(gradient.x == 0 && gradient.y == 0 && gradient.z == 0)) {
-        // return voxel_color;
-        // }
 
         double[] N = new double[3];
-        VectorMath.setVector(N, gradient.x, gradient.y, gradient.z); // ?????
+        VectorMath.setVector(N, gradient.x, gradient.y, gradient.z);
 
         // get unit vector
         double[] Nnorm = new double[3];
@@ -723,19 +720,24 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         double LN = VectorMath.dotproduct(lightVector, Nnorm);
         if (LN < 0) {
-            // System.out.println("black");
-            return new TFColor(0f, 0f, 0f, 1f);
+            System.out.println("black");
+            System.out.println("nnorm: " + Nnorm[0] + " ," + Nnorm[1] + " ," + Nnorm[2]);
+            // return new TFColor(0f, 0f, 0f, 1f);
+            LN = 0;
 
         }
 
         double[] H = new double[3];
+        VectorMath.normalize(lightVector, lightVector);
         VectorMath.addition(lightVector, lightVector, H);
         VectorMath.normalize(H, H);
 
         double NH = VectorMath.dotproduct(Nnorm, H);
-        if (LN < 0) {
+        if (NH < 0) {
             // System.out.println("black");
-            return new TFColor(0f, 0f, 0f, 1f);
+            // return new TFColor(0f, 0f, 0f, 1f);
+            NH = 0;
+
         }
 
         double Ir = black.r + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
@@ -848,6 +850,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 }
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
                     if (cuttingpoint > 0) {
+
                         switch (modeFront) {
                             case COMPOSITING:
                             case TRANSFER2D:
