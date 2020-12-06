@@ -699,6 +699,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // TODO 7: Implement Phong Shading.
 
         TFColor white = new TFColor(1, 1, 1, voxel_color.a);
+        TFColor black = new TFColor(0, 0, 0, voxel_color.a);
         // if (!(gradient.x == 0 && gradient.y == 0 && gradient.z == 0)) {
         // return voxel_color;
         // }
@@ -715,10 +716,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         } else {
             VectorMath.normalize(N, Nnorm);
         }
-
-        // invert lightVector and rayVector
-        // VectorMath.difference(new double[3], lightVector, lightVector);
-        VectorMath.difference(new double[3], rayVector, rayVector);
 
         double kAmbient = 0.1;
         double kDiffuse = 0.7;
@@ -741,9 +738,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             return new TFColor(0f, 0f, 0f, 1f);
         }
 
-        double Ir = voxel_color.r * kAmbient + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ig = voxel_color.g * kAmbient + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ib = voxel_color.b * kAmbient + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ir = black.r + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ig = black.g + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ib = black.b + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
 
         TFColor color = new TFColor(Ir, Ig, Ib, 1);
 
