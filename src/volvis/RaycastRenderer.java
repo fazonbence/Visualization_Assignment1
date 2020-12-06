@@ -534,7 +534,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             for (int i = 0; i < 3; i++) {
                 currentPos[i] -= lightVector[i];
             }
-            VoxelGradient gradient = getGradient(currentPos);
+            VoxelGradient gradient = getGradientTrilinear(currentPos);
 
             TFColor phongColor = computePhongShading(isoColorFront, gradient, lightVector, rayVector);
 
@@ -726,7 +726,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         }
 
         double[] H = new double[3];
-        VectorMath.normalize(lightVector, lightVector);
         VectorMath.addition(lightVector, lightVector, H);
         VectorMath.normalize(H, H);
 
@@ -743,20 +742,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double Ib = black.b + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
 
         TFColor color = new TFColor(Ir, Ig, Ib, 1);
-
-        // System.out.println("gradient");
-
-        // System.out.println(gradient.x + " ," + gradient.y + " ," + gradient.z);
-
-        /*
-         * System.out.println("light"); for (int i = 0; i < 3; i++) {
-         * System.out.println(lightVector[i]); } System.out.println("ray"); for (int i =
-         * 0; i < 3; i++) { System.out.println(rayVector[i]); }
-         */
-
-        // System.out.println("dot: " + LN);
-
-        // if dot product is negative return TFColor(0f, 0f, 0f, 1f)
 
         // Do you apply any changes to the color or gradient before passing it to the
         // shading function?
