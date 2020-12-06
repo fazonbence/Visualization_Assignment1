@@ -212,7 +212,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            // FLAG they might be in the wrong order
             nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
             nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
@@ -223,13 +222,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double beta = getProportion(coord[1], nearestPoints[0][1]);
         double gamma = getProportion(coord[2], nearestPoints[0][2]);
 
-        /*
-         * double alpha = Math.abs(coord[0] - nearestPoints[0][0]); double beta
-         * =Math.abs(coord[1] - nearestPoints[0][1]); double gamma = Math.abs(coord[2] -
-         * nearestPoints[0][2]);
-         */
-        //
-
         short result = 0;
         // Tri-linear interpolation
         for (int i = 0; i < nPoints; i++) {
@@ -237,7 +229,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     * (binaryNumbers[i][2] ? gamma : 1 - gamma) * getVoxel(nearestPoints[i]);
         }
 
-        // instead of getVoxel().
         return result;
     }
 
@@ -291,15 +282,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // get gradient of 8 nearest points
         int nPoints = 8;
-        // double[][] nearestPoints = new double[nPoints][3];
-
-        // boolean[] binary = new boolean[3];
 
         // getting the nearest points in the "cube"
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            // FLAG they might be in the wrong order
             nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
             nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
@@ -495,7 +482,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double alpha = 0.0;
         double opacity = 0;
 
-        float isoValue = isoValueFront; //
+        float isoValue = isoValueFront; 
 
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
@@ -511,10 +498,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             }
             nrSamples--;
             if ((float) voxelvalue < isoValue) {
-                // opacity = 0;// flag
                 alpha = 0.0;
             } else {
-                // opacity = 1;// flag
                 alpha = 1.0;
             }
 
@@ -557,7 +542,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // another light vector would be possible
 
         // new lightvector scaled w samplesize
-        // VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
         VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
                 rayVector[2] * sampleStep);
 
@@ -572,30 +556,26 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor colorAux = new TFColor(0, 0, 0, 0);
 
         // init for composite
-        // maybe needed for the 2DTransfer as well let me know if don't -Ben
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
-        // TODO 2: To be Implemented this function. Now, it just gives back a constant
-        // color depending on the mode
+        // TODO 2: To be Implemented this function.
         RaycastMode mode = cuttingpoint > 0 ? modeFront : modeBack;
-        
+
         switch (mode) {
             case COMPOSITING:
                 // 1D transfer function
-
                 do {
                     int value = getVoxelTrilinear(currentPos);
-                    if(cuttingPlaneMode)
-                    {
+
+                    //Deciding which transfer function to use to get the color
+                    if (cuttingPlaneMode) {
                         colorAux = (cuttingpoint > 0 ? tFuncFront : tFuncBack).getColor(value);
-                    }
-                    else
-                    {
+                    } else {
                         colorAux = tFuncFront.getColor(value);
-                    }       
+                    }
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
@@ -613,24 +593,23 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // 2D transfer function
                 do {
                     int value = getVoxelTrilinear(currentPos);
-                    if(cuttingPlaneMode)
-                    {
+                    //Deciding which transfer function to use
+                    if (cuttingPlaneMode) {
                         colorAux = (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).color;
-                        opacity = computeOpacity2DTF((cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).baseIntensity,(cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).radius,value,getGradientTrilinear(currentPos).mag);
-
+                        opacity = computeOpacity2DTF((cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).baseIntensity,
+                                (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).radius, value,
+                                getGradientTrilinear(currentPos).mag);
                     }
-                    
-                    else
-                    {
+
+                    else {
                         colorAux = tFunc2DFront.color;
-                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity,tFunc2DFront.radius,value,getGradientTrilinear(currentPos).mag);
-                    }       
+                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, tFunc2DFront.radius, value,
+                                getGradientTrilinear(currentPos).mag);
+                    }
 
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
-
-                 
 
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
@@ -638,11 +617,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                   
-               
-                            // computeOpacity2DTF(tFunc2DFront.baseintensity,tFunc2DFront.radius,value,gradMagnitude);
-
-               
                 break;
         }
 
@@ -706,8 +680,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int sampleStep = 1;
 
         // Decrease the resolution while rotating the image
-        // FLAG different resolution for different methods seems like a good idea, gonna
-        // ask on the Q&A
         if (interactiveMode) {
             increment = 1;
             sampleStep = 5;
@@ -747,9 +719,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.setVector(volumeCenter, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
 
         // ray computation for each pixel
-
-        System.out.println(modeFront);
-        System.out.println(modeBack);
         for (int j = imageCenter[1] - imageH / 2; j < imageCenter[1] + imageH / 2; j += increment) {
             for (int i = imageCenter[0] - imageW / 2; i < imageCenter[0] + imageW / 2; i += increment) {
                 // compute starting points of rays in a plane shifted backwards to a position
@@ -761,7 +730,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 double[] initial = { 0, 0, 0 };
                 VectorMath.difference(entryPoint, planePoint, initial);
                 double cuttingpoint = VectorMath.dotproduct(planeNorm, initial);
-                /* System.out.println(cuttingpoint); */
 
                 int val = 0;
                 // TODO 9: Implement logic for cutting plane.
@@ -770,7 +738,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     modeBack = modeFront;
                 }
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
-                    if (cuttingpoint >0) {
+                    if (cuttingpoint > 0) {
                         switch (modeFront) {
                             case COMPOSITING:
                             case TRANSFER2D:
@@ -783,7 +751,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                                 val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
                                 break;
                         }
-                    } else{
+                    } else {
                         switch (modeBack) {
                             case COMPOSITING:
                                 val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep, cuttingpoint);
@@ -825,10 +793,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     public double computeOpacity2DTF(double material_value, double material_r, double voxelValue,
             double gradMagnitude) {
 
+        // TODO 8: Implement weight based opacity.
         double opacity = 0.0;
 
         double radius = material_r / gradients.getMaxGradientMagnitude();
-        /* System.out.print("hello there"); */
 
         double absolutevalue = abs((voxelValue - material_value) / (gradMagnitude));
         double opacity1 = 1 - ((1 / radius) * (absolutevalue));
@@ -844,7 +812,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
             opacity = 0.0;
         }
-        // TODO 8: Implement weight based opacity.
+        
         return opacity;
     }
 
@@ -867,7 +835,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         isoColorBack.b = 0.0;
         isoColorBack.a = 1.0;
         for (int i = 0; i < 9; i++) {
-            System.out.println(i);
             binaryNumbers[i] = convertToBinary(i);
         }
 
@@ -922,9 +889,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.setVector(planePoint, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
 
         System.out.println("Finished initialization of RaycastRenderer");
-        /*
-         * System.out.println(planePoint); System.out.println(planeNorm);
-         */
+
     }
 
     /**
