@@ -606,24 +606,23 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                opacity = 1;// flag
+                opacity = 1;
 
                 break;
             case TRANSFER2D:
                 // 2D transfer function
-                // System.out.print("YEEEEET");
-
                 do {
                     int value = getVoxelTrilinear(currentPos);
                     if(cuttingPlaneMode)
                     {
-                        colorAux = (cuttingpoint > 0 ? tFuncFront : tFuncBack).getColor(value);
-                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity,tFunc2DFront.radius,value,getGradientTrilinear(currentPos).mag);
+                        colorAux = (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).color;
+                        opacity = computeOpacity2DTF((cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).baseIntensity,(cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).radius,value,getGradientTrilinear(currentPos).mag);
 
                     }
+                    
                     else
                     {
-                        colorAux = tFuncFront.getColor(value);
+                        colorAux = tFunc2DFront.color;
                         opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity,tFunc2DFront.radius,value,getGradientTrilinear(currentPos).mag);
                     }       
 
