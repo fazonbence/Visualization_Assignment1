@@ -720,8 +720,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         double LN = VectorMath.dotproduct(lightVector, Nnorm);
         if (LN < 0) {
-            System.out.println("black");
-            System.out.println("nnorm: " + Nnorm[0] + " ," + Nnorm[1] + " ," + Nnorm[2]);
             // return new TFColor(0f, 0f, 0f, 1f);
             LN = 0;
 
