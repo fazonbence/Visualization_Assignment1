@@ -2,7 +2,6 @@ package volvis;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-/* import com.jogamp.opengl.test.junit.graph.demos.GPURegionGLListener01; */
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 import gui.RaycastRendererPanel;
@@ -32,6 +31,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     private Volume volume = null;
 
+    /**
+    *Stores the first 8 number in binary format
+    */
+    private boolean[][] binaryNumbers = new boolean[9][3];
+
+    /**
+     * Stores the 8 nearest points to the trilinear interpolation
+     */
+    //creating these was the bottleneck
+    private double[][] nearestPoints = new double[8][3];// [points][coordinate x-y-z]
     /**
      * Rendered image.
      */
@@ -189,6 +198,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         return Math.abs(x - x0);// since we know that distance is 1
     }
 
+    
     /**
      * Gets the corresponding voxel using Tri-linear Interpolation.
      *
@@ -198,18 +208,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private short getVoxelTrilinear(double[] coord) {
         // TODO 1: Implement Tri-Linear interpolation and use it in your code
         int nPoints = 8;
-        double[][] nearestPoints = new double[nPoints][3];// [points][coordinate x-y-z]
-
-        boolean[] binary = new boolean[3];
+        
 
         // getting the nearest points in the "cube"
         for (int i = 0; i < nPoints; i++) {
-            binary = convertToBinary(i); // we get the nearest known datapoints by flooring and ceiling the inputs
-                                         // coordinates
+            // we get the nearest known datapoints by flooring and ceiling the inputs
+            // coordinates
             // FLAG they might be in the wrong order
-            nearestPoints[i][0] = binary[2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
-            nearestPoints[i][1] = binary[1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binary[0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
+            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -217,13 +225,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double beta = getProportion(coord[1], nearestPoints[0][1]);
         double gamma = getProportion(coord[2], nearestPoints[0][2]);
 
+        /*double alpha = Math.abs(coord[0] - nearestPoints[0][0]);
+        double beta =Math.abs(coord[1] - nearestPoints[0][1]);
+        double gamma = Math.abs(coord[2] - nearestPoints[0][2]);*/
+        //
+
         short result = 0;
         // Tri-linear interpolation
         for (int i = 0; i < nPoints; i++) {
-            binary = convertToBinary(i);
-            result += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+            result += (binaryNumbers[i][0] ? alpha : 1 - alpha) * (binaryNumbers[i][1] ? beta : 1 - beta) * (binaryNumbers[i][2] ? gamma : 1 - gamma)
                     * getVoxel(nearestPoints[i]);
         }
+        
         // instead of getVoxel().
         return result;
     }
@@ -266,20 +279,30 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private VoxelGradient getGradientTrilinear(double[] coord) {
         // TODO 6: Implement Tri-linear interpolation for gradients
 
+        double dx = coord[0], dy = coord[1], dz = coord[2];
+
+        // Verify they are inside the volume gradient
+        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2) || dz < 0
+                || dz > (gradients.getDimZ() - 2)) {
+
+            // If not, just return a zero gradient
+            return ZERO_GRADIENT;
+        }
+
         // get gradient of 8 nearest points
         int nPoints = 8;
-        double[][] nearestPoints = new double[nPoints][3];
+       // double[][] nearestPoints = new double[nPoints][3];
 
-        boolean[] binary = new boolean[3];
+        //boolean[] binary = new boolean[3];
 
         // getting the nearest points in the "cube"
         for (int i = 0; i < nPoints; i++) {
-            binary = convertToBinary(i); // we get the nearest known datapoints by flooring and ceiling the inputs
-                                         // coordinates
+            // we get the nearest known datapoints by flooring and ceiling the inputs
+            // coordinates
             // FLAG they might be in the wrong order
-            nearestPoints[i][0] = binary[2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
-            nearestPoints[i][1] = binary[1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binary[0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
+            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -305,12 +328,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         short resultZ = 0;
         // Tri-linear interpolation for each of the components
         for (int i = 0; i < nPoints; i++) {
-            binary = convertToBinary(i);
-            resultX += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+            resultX += (binaryNumbers[i][0] ? alpha : 1 - alpha) * (binaryNumbers[i][1] ? beta : 1 - beta) * (binaryNumbers[i][2] ? gamma : 1 - gamma)
                     * gxs[i];
-            resultY += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+            resultY += (binaryNumbers[i][0] ? alpha : 1 - alpha) * (binaryNumbers[i][1] ? beta : 1 - beta) * (binaryNumbers[i][2] ? gamma : 1 - gamma)
                     * gys[i];
-            resultZ += (binary[0] ? alpha : 1 - alpha) * (binary[1] ? beta : 1 - beta) * (binary[2] ? gamma : 1 - gamma)
+            resultZ += (binaryNumbers[i][0] ? alpha : 1 - alpha) * (binaryNumbers[i][1] ? beta : 1 - beta) * (binaryNumbers[i][2] ? gamma : 1 - gamma)
                     * gzs[i];
         }
 
@@ -819,6 +841,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         isoColorBack.g = 1.0;
         isoColorBack.b = 0.0;
         isoColorBack.a = 1.0;
+        for(int i = 0;i<9;i++)
+        {
+            System.out.println(i);
+            binaryNumbers[i] = convertToBinary(i);
+        }
 
         modeFront = RaycastMode.SLICER;
         modeBack = RaycastMode.SLICER;
