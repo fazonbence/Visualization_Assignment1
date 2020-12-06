@@ -580,11 +580,29 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 break;
             case TRANSFER2D:
                 // 2D transfer function
+                
+                 do {
+                    int value = getVoxelTrilinear(currentPos);
+                    colorAux = tFuncFront.getColor(value);
+
+                    voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
+                    voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
+                    voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+
+                    // setting a new pos
+                    for (int i = 0; i < 3; i++) {
+                        currentPos[i] += lightVector[i];
+                    }
+                    nrSamples--;
+                } while (nrSamples > 0);
+                opacity = 1;// flag
+                
                 voxel_color.r = 0;
                 voxel_color.g = 1;
                 voxel_color.b = 0;
                 voxel_color.a = 1;
                 opacity = 1;
+                computeOpacity2DTF(tFunc2DFront.baseintensity,tFunc2DFront.radius,value,gradMagnitude);
                 break;
         }
 
@@ -702,9 +720,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
              double cuttingpoint = VectorMath.dotproduct(planeNorm,initial);
             /* System.out.println(cuttingpoint); */
 
-                 int val = 0;
+                                     int val = 0;
                 // TODO 9: Implement logic for cutting plane.
-                if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {                
+                if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {  
                     if(cuttingpoint>0){
                     switch (modeFront) {
                         case COMPOSITING:
