@@ -1,4 +1,3 @@
 # Visualization - Assignment 1
 
-Team6Visualization
-pAssword1234
+Overleaf: https://www.overleaf.com/4384222122jgswpfmfsqbx
