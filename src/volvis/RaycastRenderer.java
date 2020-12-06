@@ -526,11 +526,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             color = computePackedPixelColor(r, g, b, alpha);
 
         } else {
-            // VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1],
-            // entryPoint[2]);
-            // for (int i = 0; i < 3; i++) {
-            // currentPos[i] += lightVector[i];
-            // }
             for (int i = 0; i < 3; i++) {
                 currentPos[i] -= lightVector[i];
             }
@@ -540,15 +535,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
             color = computePackedPixelColor(phongColor.r, phongColor.g, phongColor.b, alpha);
         }
-
-        // computes the color
-        //
-
-        // System.out.println(entryPoint[0] + " ," + entryPoint[1] + " ," +
-        // entryPoint[2]);
-        // System.out.println(exitPoint[0] + " ," + exitPoint[1] + " ," + exitPoint[2]);
-        // System.out.println(currentPos[0] + " ," + currentPos[1] + " ," +
-        // currentPos[2]);
 
         return color;
     }
