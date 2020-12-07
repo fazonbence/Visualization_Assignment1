@@ -41,6 +41,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     // creating these was the bottleneck
     private double[][] nearestPoints = new double[8][3];// [points][coordinate x-y-z]
+
+    /**
+     * Transfer Function 2D used in the traceRayComposite function Gets the value of
+     * tFunc2DFront or tFunc2DBack.
+     */
+    TransferFunction2D tFunc2D;
     /**
      * Rendered image.
      */
@@ -482,7 +488,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double alpha = 0.0;
         double opacity = 0;
 
-        float isoValue = isoValueFront; 
+        float isoValue = isoValueFront;
 
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
@@ -570,7 +576,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 do {
                     int value = getVoxelTrilinear(currentPos);
 
-                    //Deciding which transfer function to use to get the color
+                    // Deciding which transfer function to use to get the color
                     if (cuttingPlaneMode) {
                         colorAux = (cuttingpoint > 0 ? tFuncFront : tFuncBack).getColor(value);
                     } else {
@@ -593,23 +599,22 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // 2D transfer function
                 do {
                     int value = getVoxelTrilinear(currentPos);
-                    //Deciding which transfer function to use
+                    // Deciding which transfer function to use
+
                     if (cuttingPlaneMode) {
-                        colorAux = (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).color;
-                        opacity = computeOpacity2DTF((cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).baseIntensity,
-                                (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack).radius, value,
-                                getGradientTrilinear(currentPos).mag);
+                        tFunc2D = (cuttingpoint > 0 ? tFunc2DFront : tFunc2DBack);
                     }
 
                     else {
-                        colorAux = tFunc2DFront.color;
-                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, tFunc2DFront.radius, value,
-                                getGradientTrilinear(currentPos).mag);
+                        tFunc2D = tFunc2DFront;
                     }
-
+                    colorAux = tFunc2D.color;
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+
+                    opacity += colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius, value,
+                            getGradientTrilinear(currentPos).mag);
 
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
@@ -794,25 +799,25 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double gradMagnitude) {
 
         // TODO 8: Implement weight based opacity.
-        double opacity = 0.0;
+        double opacity;// = 0.0;
 
-        double radius = material_r / gradients.getMaxGradientMagnitude();
-
+         double radius = material_r / gradients.getMaxGradientMagnitude();
+        //double radius = material_r;
         double absolutevalue = abs((voxelValue - material_value) / (gradMagnitude));
         double opacity1 = 1 - ((1 / radius) * (absolutevalue));
 
-        if (gradMagnitude == 0 && material_value == voxelValue) {
-
+        if (gradMagnitude == 0 && abs(material_value - voxelValue) < 0.001) {
             opacity = 1.0;
-        } else if (gradMagnitude > 0 && material_value - (radius * abs(gradMagnitude)) <= voxelValue
-                && voxelValue <= material_value - (radius * abs(gradMagnitude))) {
+
+        } else if (gradMagnitude > 0 && material_value - (radius * gradMagnitude) <= voxelValue
+                && voxelValue <= material_value + (radius * gradMagnitude)) {
 
             opacity = opacity1;
         } else {
 
             opacity = 0.0;
         }
-        
+
         return opacity;
     }
 
