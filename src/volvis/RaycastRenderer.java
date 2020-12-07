@@ -613,7 +613,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
 
-                    opacity += colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius, value,
+                    opacity +=(1-opacity)* colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius, value,
                             getGradientTrilinear(currentPos).mag);
 
                     // setting a new pos
@@ -801,8 +801,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // TODO 8: Implement weight based opacity.
         double opacity;// = 0.0;
 
-         double radius = material_r / gradients.getMaxGradientMagnitude();
-        //double radius = material_r;
+        double radius = material_r / gradients.getMaxGradientMagnitude();
+        // double radius = material_r;
         double absolutevalue = abs((voxelValue - material_value) / (gradMagnitude));
         double opacity1 = 1 - ((1 / radius) * (absolutevalue));
 
