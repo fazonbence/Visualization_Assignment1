@@ -585,14 +585,14 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
-
+                   opacity+=(1-opacity)*colorAux.a;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                opacity = 1;
+               // opacity = 1;
 
                 break;
             case TRANSFER2D:
