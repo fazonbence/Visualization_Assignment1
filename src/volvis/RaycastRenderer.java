@@ -741,6 +741,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
                 if (!cuttingPlaneMode) {
                     modeBack = modeFront;
+                    isoColorBack = isoColorFront;
+                    isoValueBack = isoValueFront;
                 }
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
                     if (cuttingpoint > 0) {
