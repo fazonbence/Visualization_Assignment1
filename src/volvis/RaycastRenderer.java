@@ -469,9 +469,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * @param exitPoint  Last point of the ray.
      * @param rayVector  Direction of the ray.
      * @param sampleStep Sample step of the ray.
+     * @param isoValue   The iso value
+     * @param isoColor   The iso color
      * @return Color assigned to a ray/pixel.
      */
-    private int traceRayIso(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep) {
+    private int traceRayIso(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep,
+            double isoValue, TFColor isoColor) {
 
         double[] lightVector = new double[3];
         // We define the light vector as directed toward the view point (which is the
@@ -487,8 +490,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         r = g = b = 0.0;
         double alpha = 0.0;
         double opacity = 0;
-
-        float isoValue = isoValueFront;
 
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
@@ -511,10 +512,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         } while (nrSamples > 0 && (float) voxelvalue < isoValue);
 
-        // isoColorFront contains the isosurface color from the GUI
-        r = isoColorFront.r;
-        g = isoColorFront.g;
-        b = isoColorFront.b;
+        r = isoColor.r;
+        g = isoColor.g;
+        b = isoColor.b;
 
         // computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
@@ -585,14 +585,14 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
-                   opacity+=(1-opacity)*colorAux.a;
+                    opacity += (1 - opacity) * colorAux.a;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-               // opacity = 1;
+                // opacity = 1;
 
                 break;
             case TRANSFER2D:
@@ -613,8 +613,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
 
-                    opacity +=(1-opacity)* colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius, value,
-                            getGradientTrilinear(currentPos).mag);
+                    opacity += (1 - opacity) * colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius,
+                            value, getGradientTrilinear(currentPos).mag);
 
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
@@ -753,7 +753,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                                 val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
                                 break;
                             case ISO_SURFACE:
-                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep, isoValueFront,
+                                        isoColorFront);
                                 break;
                         }
                     } else {
@@ -768,7 +769,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                                 val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
                                 break;
                             case ISO_SURFACE:
-                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep, isoValueBack,
+                                        isoColorBack);
                                 break;
                         }
                     }
