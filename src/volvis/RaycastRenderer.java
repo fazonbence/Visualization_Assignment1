@@ -218,9 +218,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][0] = binaryNumbers[i][0] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][2] = binaryNumbers[i][2] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -293,9 +293,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][0] = binaryNumbers[i][0] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][2] = binaryNumbers[i][2] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -509,9 +509,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         } while (nrSamples > 0 && (float) voxelvalue < isoValue);
 
-        r = isoColor.r;
-        g = isoColor.g;
-        b = isoColor.b;
         int color;
 
         if (alpha == 0) {
@@ -529,10 +526,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             for (int i = 0; i < 3; i++) {
                 currentPos[i] -= lightVector[i];
             }
+
             VoxelGradient gradient = getGradientTrilinear(currentPos);
 
-            TFColor phongColor = computePhongShading(isoColorFront, gradient, lightVector, rayVector);
-
+            TFColor phongColor = computePhongShading(isoColor, gradient, lightVector, rayVector);
             color = computePackedPixelColor(phongColor.r, phongColor.g, phongColor.b, alpha);
         }
 
@@ -660,25 +657,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 break;
         }
 
-        if (shadingMode) {
-            // Shading mode on
-            // VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1],
-            // entryPoint[2]);
-
-            // VoxelGradient gradient = getGradient(currentPos);
-
-            // TFColor phongColor = computePhongShading(voxel_color, gradient, lightVector,
-            // rayVector);
-            // voxel_color.r = phongColor.r;
-            // voxel_color.g = phongColor.g;
-            // voxel_color.b = phongColor.b;
-            // voxel_color.a = phongColor.a;
-            // opacity = 1;
-        }
-
         r = voxel_color.r;
         g = voxel_color.g;
         b = voxel_color.b;
+
         alpha = opacity;
 
         // computes the color
@@ -701,55 +683,55 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // TODO 7: Implement Phong Shading.
 
-        TFColor white = new TFColor(1, 1, 1, voxel_color.a);
-        TFColor black = new TFColor(0, 0, 0, voxel_color.a);
+        double kAmbient = 0.1;
+        double kDiffuse = 0.7;
+        double kSpecular = 0.2;
+
+        TFColor color = new TFColor(voxel_color.r * kAmbient, voxel_color.g * kAmbient, voxel_color.b * kAmbient, 1);
+
+        if (gradient.mag == 0) {
+            color.r = kAmbient * voxel_color.r;
+            color.g = kAmbient * voxel_color.g;
+            color.b = kAmbient * voxel_color.b;
+            color.a = 1;
+            return color;
+
+        }
 
         double[] N = new double[3];
         VectorMath.setVector(N, gradient.x, gradient.y, gradient.z);
 
         // get unit vector
         double[] Nnorm = new double[3];
-        if (N[0] == 0 && N[1] == 0 && N[2] == 0) {
-            Nnorm[0] = N[0];
-            Nnorm[1] = N[1];
-            Nnorm[2] = N[2];
-        } else {
-            VectorMath.normalize(N, Nnorm);
-        }
 
-        double kAmbient = 0.1;
-        double kDiffuse = 0.7;
-        double kSpecular = 0.2;
+        VectorMath.normalize(N, Nnorm);
+        VectorMath.normalize(lightVector, lightVector);
 
         double LN = VectorMath.dotproduct(lightVector, Nnorm);
-        if (LN < 0) {
-            // return new TFColor(0f, 0f, 0f, 1f);
-            LN = 0;
-
-        }
 
         double[] H = new double[3];
         VectorMath.addition(lightVector, lightVector, H);
         VectorMath.normalize(H, H);
 
         double NH = VectorMath.dotproduct(Nnorm, H);
-        if (NH < 0) {
-            // System.out.println("black");
-            // return new TFColor(0f, 0f, 0f, 1f);
-            NH = 0;
+        double specular = Math.pow(NH, 100);
+
+        if (LN > 0) {
+            color.r = voxel_color.r * LN * kDiffuse;
+            color.g = voxel_color.g * LN * kDiffuse;
+            color.b = voxel_color.b * LN * kDiffuse;
 
         }
+        if (NH > 0) {
+            color.r += kSpecular * specular;
+            color.g += kSpecular * specular;
+            color.b += kSpecular * specular;
+        }
 
-        double Ir = kAmbient + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ig = kAmbient + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ib = kAmbient + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        color.r += kAmbient;
+        color.g += kAmbient;
+        color.b += kAmbient;
 
-        TFColor color = new TFColor(Ir, Ig, Ib, 1);
-
-        // Do you apply any changes to the color or gradient before passing it to the
-        // shading function?
-        // Yes, if all R, G and B are 0, we set the alpha/opacity to 0, otherwise set it
-        // to the computed alpha
         return color;
     }
 
