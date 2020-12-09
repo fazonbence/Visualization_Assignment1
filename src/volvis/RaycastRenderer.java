@@ -578,7 +578,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // init for composite
         double distance = VectorMath.distance(entryPoint, exitPoint);
-        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
@@ -602,8 +602,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         colorAux = tFuncFront.getColor(value);
                     }
 
-                    if (shadingMode && colorAux.a != 0) {
-                        gradient = getGradient(currentPos);
+                    if (shadingMode) {
+                        gradient = getGradientTrilinear(currentPos);
                         // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
                         // System.out.println("yep");
                         // }
@@ -611,12 +611,20 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         colorAux.r = phongColor.r;
                         colorAux.g = phongColor.g;
                         colorAux.b = phongColor.b;
-                        // colorAux.a = 1;
+                        if (colorAux.a != 0) {
+                            // System.out.println(colorAux.a);
+                        }
+                        // colorAux.a = phongColor.a; with this the image is all black
                     }
 
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+
+                    // voxel_color.r = BackToFront(colorAux.r, voxel_color.r, colorAux.a);
+                    // voxel_color.g = BackToFront(colorAux.g, voxel_color.g, colorAux.a);
+                    // voxel_color.b = BackToFront(colorAux.b, voxel_color.b, colorAux.a);
+
                     opacity += (1 - opacity) * colorAux.a;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
@@ -624,7 +632,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                // opacity = 1;
 
                 break;
             case TRANSFER2D:
