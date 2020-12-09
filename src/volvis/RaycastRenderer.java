@@ -588,11 +588,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // TODO 2: To be Implemented this function.
         RaycastMode mode = cuttingpoint > 0 ? modeFront : modeBack;
 
+        VoxelGradient gradient;
+        TFColor phongColor;
+        int value;
+
         switch (mode) {
             case COMPOSITING:
                 // 1D transfer function
                 do {
-                    int value = getVoxelTrilinear(currentPos);
+                    value = getVoxelTrilinear(currentPos);
 
                     // Deciding which transfer function to use to get the color
                     if (cuttingPlaneMode) {
@@ -600,6 +604,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     } else {
                         colorAux = tFuncFront.getColor(value);
                     }
+
+                    if (shadingMode && colorAux.a != 0) {
+                        gradient = getGradient(currentPos);
+                        // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
+                        // System.out.println("yep");
+                        // }
+                        phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
+                        colorAux.r = phongColor.r;
+                        colorAux.g = phongColor.g;
+                        colorAux.b = phongColor.b;
+                        // colorAux.a = 1;
+                    }
+
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
@@ -616,7 +633,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             case TRANSFER2D:
                 // 2D transfer function
                 do {
-                    int value = getVoxelTrilinear(currentPos);
+                    value = getVoxelTrilinear(currentPos);
                     // Deciding which transfer function to use
 
                     if (cuttingPlaneMode) {
@@ -723,9 +740,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         }
 
-        double Ir = black.r + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ig = black.g + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
-        double Ib = black.b + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ir = kAmbient + voxel_color.r * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ig = kAmbient + voxel_color.g * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
+        double Ib = kAmbient + voxel_color.b * kDiffuse * LN + kSpecular * Math.pow(NH, 100);
 
         TFColor color = new TFColor(Ir, Ig, Ib, 1);
 
