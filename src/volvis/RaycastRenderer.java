@@ -218,9 +218,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][0] = binaryNumbers[i][0] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][2] = binaryNumbers[i][2] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -293,9 +293,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < nPoints; i++) {
             // we get the nearest known datapoints by flooring and ceiling the inputs
             // coordinates
-            nearestPoints[i][0] = binaryNumbers[i][2] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
+            nearestPoints[i][0] = binaryNumbers[i][0] ? Math.ceil(coord[0]) : Math.floor(coord[0]);
             nearestPoints[i][1] = binaryNumbers[i][1] ? Math.ceil(coord[1]) : Math.floor(coord[1]);
-            nearestPoints[i][2] = binaryNumbers[i][0] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
+            nearestPoints[i][2] = binaryNumbers[i][2] ? Math.ceil(coord[2]) : Math.floor(coord[2]);
         }
 
         // Calculating portions
@@ -312,7 +312,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             VoxelGradient vg = gradients.getGradient((int) nearestPoints[i][0], (int) nearestPoints[i][1],
                     (int) nearestPoints[i][2]);
             gxs[i] = vg.x;
-            gys[i] = vg.z;
+            gys[i] = vg.y;
             gzs[i] = vg.z;
         }
 
@@ -480,7 +480,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // We define the light vector as directed toward the view point (which is the
         // source of the light)
         // another light vector would be possible
-        // VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
         VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
                 rayVector[2] * sampleStep);
 
@@ -492,7 +491,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double opacity = 0;
 
         double distance = VectorMath.distance(entryPoint, exitPoint);
-        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
         int voxelvalue;
@@ -504,20 +503,36 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 currentPos[i] += lightVector[i];
             }
             nrSamples--;
-            if ((float) voxelvalue < isoValue) {
-                alpha = 0.0;
-            } else {
+            if ((float) voxelvalue >= isoValue) {
                 alpha = 1.0;
             }
 
         } while (nrSamples > 0 && (float) voxelvalue < isoValue);
 
-        r = isoColor.r;
-        g = isoColor.g;
-        b = isoColor.b;
+        int color;
 
-        // computes the color
-        int color = computePackedPixelColor(r, g, b, alpha);
+        if (alpha == 0) {
+            color = computePackedPixelColor(0, 0, 0, 0);
+            return color;
+        }
+        if (!shadingMode) {
+            r = isoColor.r;
+            g = isoColor.g;
+            b = isoColor.b;
+
+            color = computePackedPixelColor(r, g, b, alpha);
+
+        } else {
+            for (int i = 0; i < 3; i++) {
+                currentPos[i] -= lightVector[i];
+            }
+
+            VoxelGradient gradient = getGradientTrilinear(currentPos);
+
+            TFColor phongColor = computePhongShading(isoColor, gradient, lightVector, rayVector);
+            color = computePackedPixelColor(phongColor.r, phongColor.g, phongColor.b, alpha);
+        }
+
         return color;
     }
 
@@ -570,11 +585,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         // TODO 2: To be Implemented this function.
         RaycastMode mode = cuttingpoint > 0 ? modeFront : modeBack;
 
+        VoxelGradient gradient;
+        TFColor phongColor;
+        int value;
+
         switch (mode) {
             case COMPOSITING:
                 // 1D transfer function
                 do {
-                    int value = getVoxelTrilinear(currentPos);
+                    value = getVoxelTrilinear(currentPos);
 
                     // Deciding which transfer function to use to get the color
                     if (cuttingPlaneMode) {
@@ -582,6 +601,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     } else {
                         colorAux = tFuncFront.getColor(value);
                     }
+
+                    if (shadingMode && colorAux.a != 0) {
+                        gradient = getGradient(currentPos);
+                        // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
+                        // System.out.println("yep");
+                        // }
+                        phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
+                        colorAux.r = phongColor.r;
+                        colorAux.g = phongColor.g;
+                        colorAux.b = phongColor.b;
+                        // colorAux.a = 1;
+                    }
+
                     voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
@@ -598,7 +630,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             case TRANSFER2D:
                 // 2D transfer function
                 do {
-                    int value = getVoxelTrilinear(currentPos);
+                    value = getVoxelTrilinear(currentPos);
                     // Deciding which transfer function to use
 
                     if (cuttingPlaneMode) {
@@ -625,18 +657,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 break;
         }
 
-        if (shadingMode) {
-            // Shading mode on
-            voxel_color.r = 1;
-            voxel_color.g = 0;
-            voxel_color.b = 1;
-            voxel_color.a = 1;
-            opacity = 1;
-        }
-
         r = voxel_color.r;
         g = voxel_color.g;
         b = voxel_color.b;
+
         alpha = opacity;
 
         // computes the color
@@ -658,7 +682,55 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double[] rayVector) {
 
         // TODO 7: Implement Phong Shading.
-        TFColor color = new TFColor(0, 0, 0, 1);
+
+        double kAmbient = 0.1;
+        double kDiffuse = 0.7;
+        double kSpecular = 0.2;
+
+        TFColor color = new TFColor(voxel_color.r * kAmbient, voxel_color.g * kAmbient, voxel_color.b * kAmbient, 1);
+
+        if (gradient.mag == 0) {
+            color.r = kAmbient * voxel_color.r;
+            color.g = kAmbient * voxel_color.g;
+            color.b = kAmbient * voxel_color.b;
+            color.a = 1;
+            return color;
+
+        }
+
+        double[] N = new double[3];
+        VectorMath.setVector(N, gradient.x, gradient.y, gradient.z);
+
+        // get unit vector
+        double[] Nnorm = new double[3];
+
+        VectorMath.normalize(N, Nnorm);
+        VectorMath.normalize(lightVector, lightVector);
+
+        double LN = VectorMath.dotproduct(lightVector, Nnorm);
+
+        double[] H = new double[3];
+        VectorMath.addition(lightVector, lightVector, H);
+        VectorMath.normalize(H, H);
+
+        double NH = VectorMath.dotproduct(Nnorm, H);
+        double specular = Math.pow(NH, 100);
+
+        if (LN > 0) {
+            color.r = voxel_color.r * LN * kDiffuse;
+            color.g = voxel_color.g * LN * kDiffuse;
+            color.b = voxel_color.b * LN * kDiffuse;
+
+        }
+        if (NH > 0) {
+            color.r += kSpecular * specular;
+            color.g += kSpecular * specular;
+            color.b += kSpecular * specular;
+        }
+
+        color.r += kAmbient;
+        color.g += kAmbient;
+        color.b += kAmbient;
 
         return color;
     }
@@ -746,6 +818,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 }
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
                     if (cuttingpoint > 0) {
+
                         switch (modeFront) {
                             case COMPOSITING:
                             case TRANSFER2D:
