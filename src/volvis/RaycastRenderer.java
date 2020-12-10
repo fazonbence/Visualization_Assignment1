@@ -571,7 +571,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double r, g, b;
         r = g = b = 0.0;
         double alpha = 0.0;
-        double opacity = 0;
+        double opacity = 1;
 
         TFColor voxel_color = new TFColor(0, 0, 0, 0);
         TFColor colorAux = new TFColor(0, 0, 0, 0);
@@ -611,6 +611,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         colorAux.r = phongColor.r;
                         colorAux.g = phongColor.g;
                         colorAux.b = phongColor.b;
+                        //colorAux = phongColor;
                         if (colorAux.a != 0) {
                             // System.out.println(colorAux.a);
                         }
@@ -625,7 +626,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     // voxel_color.g = BackToFront(colorAux.g, voxel_color.g, colorAux.a);
                     // voxel_color.b = BackToFront(colorAux.b, voxel_color.b, colorAux.a);
 
-                    opacity += (1 - opacity) * colorAux.a;
+                    opacity =colorAux.a+ (1 - colorAux.a) * opacity;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
@@ -652,9 +653,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
                     voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
 
-                    opacity += (1 - opacity) * colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius,
-                            value, getGradientTrilinear(currentPos).mag);
+                    double CurrentAlpha =colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius,
+                    value, getGradientTrilinear(currentPos).mag);
 
+                    opacity =CurrentAlpha+ (1 - CurrentAlpha) * opacity;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
