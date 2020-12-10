@@ -571,14 +571,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double r, g, b;
         r = g = b = 0.0;
         double alpha = 0.0;
-        double opacity = 0;
+        double opacity = 0; /* previous value was 0 */
+        double opacity1 = 1;
 
         TFColor voxel_color = new TFColor(0, 0, 0, 0);
         TFColor colorAux = new TFColor(0, 0, 0, 0);
 
         // init for composite
         double distance = VectorMath.distance(entryPoint, exitPoint);
-        int nrSamples = 1 + (int) Math.floor(VectorMath.distance(entryPoint, exitPoint) / sampleStep);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
@@ -602,29 +603,43 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         colorAux = tFuncFront.getColor(value);
                     }
 
-                    if (shadingMode && colorAux.a != 0) {
-                        gradient = getGradient(currentPos);
+                    if (shadingMode) {
+                        gradient = getGradientTrilinear(currentPos);
                         // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
                         // System.out.println("yep");
                         // }
                         phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
-                        colorAux.r = phongColor.r;
+                        /*colorAux.r = phongColor.r;
                         colorAux.g = phongColor.g;
-                        colorAux.b = phongColor.b;
-                        // colorAux.a = 1;
+                        colorAux.b = phongColor.b;*/
+                        // colorAux = phongColor;
+                        if (colorAux.a != 0) {
+                            // System.out.println(colorAux.a);
+                        }
+                        // colorAux.a = phongColor.a; with this the image is all black
+                        voxel_color.r = BackToFront(voxel_color.r, phongColor.r, colorAux.a);
+                        voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
+                        voxel_color.b = BackToFront(voxel_color.b, phongColor.b, colorAux.a);
+                    } else {
+                        voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
+                        voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
+                        voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
                     }
 
-                    voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
-                    voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
-                    voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
-                    opacity += (1 - opacity) * colorAux.a;
+                    // voxel_color.r = BackToFront(colorAux.r, voxel_color.r, colorAux.a);
+                    // voxel_color.g = BackToFront(colorAux.g, voxel_color.g, colorAux.a);
+                    // voxel_color.b = BackToFront(colorAux.b, voxel_color.b, colorAux.a);
+
+                    opacity = colorAux.a + (1 - colorAux.a) * opacity;
+
+                    // opacity1 *= (1 - colorAux.a);
+                    // opacity = 1;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
                     }
                     nrSamples--;
                 } while (nrSamples > 0);
-                // opacity = 1;
 
                 break;
             case TRANSFER2D:
@@ -641,13 +656,35 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         tFunc2D = tFunc2DFront;
                     }
                     colorAux = tFunc2D.color;
-                    voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
-                    voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
-                    voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
 
-                    opacity += (1 - opacity) * colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius,
-                            value, getGradientTrilinear(currentPos).mag);
+                    
+                    if (shadingMode) {
+                        gradient = getGradientTrilinear(currentPos);
+                        // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
+                        // System.out.println("yep");
+                        // }
+                        phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
+                        /*colorAux.r = phongColor.r;
+                        colorAux.g = phongColor.g;
+                        colorAux.b = phongColor.b;*/
+                        // colorAux = phongColor;
+                        if (colorAux.a != 0) {
+                            // System.out.println(colorAux.a);
+                        }
+                        // colorAux.a = phongColor.a; with this the image is all black
+                        voxel_color.r = BackToFront(voxel_color.r, phongColor.r, colorAux.a);
+                        voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
+                        voxel_color.b = BackToFront(voxel_color.b, phongColor.b, colorAux.a);
+                    } else {
+                        voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
+                        voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
+                        voxel_color.b = BackToFront(voxel_color.b, colorAux.b, colorAux.a);
+                    }
 
+                    double CurrentAlpha = colorAux.a * computeOpacity2DTF(tFunc2D.baseIntensity, tFunc2D.radius, value,
+                            getGradientTrilinear(currentPos).mag);
+
+                    opacity =CurrentAlpha+ (1 - CurrentAlpha) * opacity;
                     // setting a new pos
                     for (int i = 0; i < 3; i++) {
                         currentPos[i] += lightVector[i];
