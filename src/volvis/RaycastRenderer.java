@@ -705,6 +705,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double kAmbient = 0.1;
         double kDiffuse = 0.7;
         double kSpecular = 0.2;
+        int n = 100;
 
         TFColor color = new TFColor(voxel_color.r * kAmbient, voxel_color.g * kAmbient, voxel_color.b * kAmbient,
                 voxel_color.a);
@@ -730,7 +731,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.normalize(H, H);
 
         double NH = VectorMath.dotproduct(Nnorm, H);
-        double specular = Math.pow(NH, 100);
+        double specular = Math.pow(NH, n);
 
         if (LN > 0) {
             color.r = voxel_color.r * LN * kDiffuse;
