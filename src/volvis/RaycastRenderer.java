@@ -561,13 +561,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // the light vector is directed toward the view point (which is the source of
         // the light)
-       
+
         // increment vector scaled w samplesize and opposed to the ray
         VectorMath.setVector(increment, -rayVector[0] * sampleStep, -rayVector[1] * sampleStep,
-                -rayVector[2] * sampleStep);       
-                
-        VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
+                -rayVector[2] * sampleStep);
 
+        VectorMath.setVector(lightVector, rayVector[0], rayVector[1], rayVector[2]);
 
         // base init
         // Initialization of the colors as floating point values
@@ -606,7 +605,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         colorAux = tFuncFront.getColor(value);
                     }
 
-                    //applying shading
+                    // applying shading
                     if (shadingMode) {
                         gradient = getGradientTrilinear(currentPos);
 
@@ -615,8 +614,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         voxel_color.r = BackToFront(voxel_color.r, phongColor.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
                         voxel_color.b = BackToFront(voxel_color.b, phongColor.b, colorAux.a);
-                    } 
-                    //without shading
+                    }
+                    // without shading
                     else {
                         voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
@@ -647,7 +646,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     }
                     colorAux = tFunc2D.color;
 
-                    //applying shading
+                    // applying shading
                     if (shadingMode) {
                         gradient = getGradientTrilinear(currentPos);
 
@@ -657,7 +656,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
                         voxel_color.b = BackToFront(voxel_color.b, phongColor.b, colorAux.a);
                     } else
-                    //without shading
+                    // without shading
                     {
                         voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
@@ -707,13 +706,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double kDiffuse = 0.7;
         double kSpecular = 0.2;
 
-        TFColor color = new TFColor(voxel_color.r * kAmbient, voxel_color.g * kAmbient, voxel_color.b * kAmbient, 1);
+        TFColor color = new TFColor(voxel_color.r * kAmbient, voxel_color.g * kAmbient, voxel_color.b * kAmbient,
+                voxel_color.a);
 
         if (gradient.mag == 0) {
-            color.r = kAmbient * voxel_color.r;
-            color.g = kAmbient * voxel_color.g;
-            color.b = kAmbient * voxel_color.b;
-            color.a = 1;
             return color;
 
         }
