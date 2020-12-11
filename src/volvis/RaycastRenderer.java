@@ -557,14 +557,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private int traceRayComposite(double[] entryPoint, double[] exitPoint, double[] rayVector, double sampleStep,
             double cuttingpoint) {
         double[] lightVector = new double[3];
+        double[] reallightVector = new double[3];
 
         // the light vector is directed toward the view point (which is the source of
         // the light)
         // another light vector would be possible
 
         // new lightvector scaled w samplesize
-        VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
-                rayVector[2] * sampleStep);
+       VectorMath.setVector(lightVector, -rayVector[0] * sampleStep, -rayVector[1] * sampleStep,
+                -rayVector[2] * sampleStep);
+       /* VectorMath.setVector(lightVector, rayVector[0] * sampleStep, rayVector[1] * sampleStep,
+                rayVector[2] * sampleStep);*/
+        VectorMath.setVector(reallightVector, rayVector[0], rayVector[1],
+                rayVector[2]);
 
         // base init
         // Initialization of the colors as floating point values
@@ -581,7 +586,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double distance = VectorMath.distance(entryPoint, exitPoint);
         int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
         double[] currentPos = new double[3];
-        VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
+        VectorMath.setVector(currentPos, exitPoint[0], exitPoint[1], exitPoint[2]);
 
         // TODO 2: To be Implemented this function.
         RaycastMode mode = cuttingpoint > 0 ? modeFront : modeBack;
@@ -605,21 +610,23 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
                     if (shadingMode) {
                         gradient = getGradientTrilinear(currentPos);
+                        //gradient = getGradient(currentPos);
                         // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
                         // System.out.println("yep");
                         // }
-                        phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
+                        phongColor = computePhongShading(colorAux, gradient, reallightVector, rayVector);
                         /*colorAux.r = phongColor.r;
                         colorAux.g = phongColor.g;
                         colorAux.b = phongColor.b;*/
                         // colorAux = phongColor;
-                        if (colorAux.a != 0) {
-                            // System.out.println(colorAux.a);
-                        }
+                        
                         // colorAux.a = phongColor.a; with this the image is all black
                         voxel_color.r = BackToFront(voxel_color.r, phongColor.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
                         voxel_color.b = BackToFront(voxel_color.b, phongColor.b, colorAux.a);
+                        /*voxel_color.r = BackToFront(phongColor.r, voxel_color.r, colorAux.a);
+                        voxel_color.g = BackToFront(phongColor.g, voxel_color.g, colorAux.a);
+                        voxel_color.b = BackToFront(phongColor.b, voxel_color.b, colorAux.a);*/
                     } else {
                         voxel_color.r = BackToFront(voxel_color.r, colorAux.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, colorAux.g, colorAux.a);
@@ -663,14 +670,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         // if (colorAux.r > 0.01 || colorAux.g > 0.01 || colorAux.b > 0.01) {
                         // System.out.println("yep");
                         // }
-                        phongColor = computePhongShading(colorAux, gradient, lightVector, rayVector);
+                        phongColor = computePhongShading(colorAux, gradient, reallightVector, rayVector);
                         /*colorAux.r = phongColor.r;
                         colorAux.g = phongColor.g;
                         colorAux.b = phongColor.b;*/
                         // colorAux = phongColor;
-                        if (colorAux.a != 0) {
-                            // System.out.println(colorAux.a);
-                        }
+                        
                         // colorAux.a = phongColor.a; with this the image is all black
                         voxel_color.r = BackToFront(voxel_color.r, phongColor.r, colorAux.a);
                         voxel_color.g = BackToFront(voxel_color.g, phongColor.g, colorAux.a);
@@ -858,6 +863,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
                         switch (modeFront) {
                             case COMPOSITING:
+                                val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep, cuttingpoint);
+                                break;
                             case TRANSFER2D:
                                 val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep, cuttingpoint);
                                 break;
