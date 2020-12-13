@@ -700,8 +700,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private TFColor computePhongShading(TFColor voxel_color, VoxelGradient gradient, double[] lightVector,
             double[] rayVector) {
 
-        // TODO 7: Implement Phong Shading.
-
         double kAmbient = 0.1;
         double kDiffuse = 0.7;
         double kSpecular = 0.2;
@@ -712,24 +710,24 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         if (gradient.mag == 0) {
             return color;
-
         }
 
         double[] N = new double[3];
         VectorMath.setVector(N, gradient.x, gradient.y, gradient.z);
-
-        // get unit vector
         double[] Nnorm = new double[3];
-
         VectorMath.normalize(N, Nnorm);
+
         VectorMath.normalize(lightVector, lightVector);
 
+        // diffuse component
         double LN = VectorMath.dotproduct(lightVector, Nnorm);
 
+        // halfway vector
         double[] H = new double[3];
         VectorMath.addition(lightVector, lightVector, H);
         VectorMath.normalize(H, H);
 
+        // specular component
         double NH = VectorMath.dotproduct(Nnorm, H);
         double specular = Math.pow(NH, n);
 
