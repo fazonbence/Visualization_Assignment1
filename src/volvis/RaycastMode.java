@@ -2,6 +2,7 @@ package volvis;
 
 /**
  * Enumerate indicating the possible modes of our Raycast.
+ * 
  * @author Humberto Garcia.
  */
 public enum RaycastMode {

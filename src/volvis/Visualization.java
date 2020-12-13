@@ -97,7 +97,7 @@ public class Visualization implements GLEventListener, TFChangeListener {
 
         // call the visualize() methods of all subscribed renderers
         for (int i = 0; i < renderers.size(); i++) {
-            ((RaycastRenderer)renderers.get(i)).updateCuttingPlaneVectors(trackball.getTransformationMatrixPlane());
+            ((RaycastRenderer) renderers.get(i)).updateCuttingPlaneVectors(trackball.getTransformationMatrixPlane());
             renderers.get(i).visualize(gl);
             // blocking call ensures drawing of renderer is completed before
             // next one starts

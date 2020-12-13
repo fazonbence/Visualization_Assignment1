@@ -21,10 +21,10 @@ import volvis.TransferFunction2D;
 
 /**
  *
- * @author michel and modified by Anna Vilanova 
+ * @author michel and modified by Anna Vilanova
  * 
- * NO IMPLEMENTATION NEEDED FOR THE BASIC ASSIGNMENTME 
- * YOu need to modify it if you want to change the interface
+ *         NO IMPLEMENTATION NEEDED FOR THE BASIC ASSIGNMENTME YOu need to
+ *         modify it if you want to change the interface
  */
 
 public class TransferFunction2DView extends javax.swing.JPanel {
@@ -33,22 +33,22 @@ public class TransferFunction2DView extends javax.swing.JPanel {
     private final int DOTSIZE = 8;
     public Ellipse2D.Double baseControlPoint, radiusControlPoint;
     boolean selectedBaseControlPoint, selectedRadiusControlPoint;
-    
-    
+
     /**
      * Creates new form TransferFunction2DView
+     * 
      * @param ed
      */
     public TransferFunction2DView(TransferFunction2DEditor ed) {
         initComponents();
-        
+
         this.ed = ed;
         selectedBaseControlPoint = false;
         selectedRadiusControlPoint = false;
         addMouseMotionListener(new TriangleWidgetHandler());
         addMouseListener(new SelectionHandler());
     }
-    
+
     @Override
     public void paintComponent(Graphics g) {
 
@@ -58,39 +58,39 @@ public class TransferFunction2DView extends javax.swing.JPanel {
         int h = this.getHeight();
         g2.setColor(Color.white);
         g2.fillRect(0, 0, w, h);
-        
+
         double maxHistoMagnitude = ed.histogram[0];
         for (int i = 0; i < ed.histogram.length; i++) {
             maxHistoMagnitude = ed.histogram[i] > maxHistoMagnitude ? ed.histogram[i] : maxHistoMagnitude;
         }
-        
+
         double binWidth = (double) w / (double) ed.xbins;
         double binHeight = (double) h / (double) ed.ybins;
         maxHistoMagnitude = Math.log(maxHistoMagnitude);
-        
-        
+
         for (int y = 0; y < ed.ybins; y++) {
             for (int x = 0; x < ed.xbins; x++) {
                 if (ed.histogram[y * ed.xbins + x] > 0) {
-                    int intensity = (int) Math.floor(255 * (1.0 - Math.log(ed.histogram[y * ed.xbins + x]) / maxHistoMagnitude));
+                    int intensity = (int) Math
+                            .floor(255 * (1.0 - Math.log(ed.histogram[y * ed.xbins + x]) / maxHistoMagnitude));
                     g2.setColor(new Color(intensity, intensity, intensity));
                     g2.fill(new Rectangle2D.Double(x * binWidth, h - (y * binHeight), binWidth, binHeight));
                 }
             }
         }
-        
+
         int ypos = h;
         int xpos = (int) (ed.tf2D.baseIntensity * binWidth);
         g2.setColor(Color.black);
         baseControlPoint = new Ellipse2D.Double(xpos - DOTSIZE / 2, ypos - DOTSIZE, DOTSIZE, DOTSIZE);
         g2.fill(baseControlPoint);
-        g2.drawLine(xpos, ypos, xpos - (int) (ed.tf2D.radius * binWidth ), 0);
-        g2.drawLine(xpos, ypos, xpos + (int) (ed.tf2D.radius * binWidth ), 0);
-        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.tf2D.radius * binWidth ) - DOTSIZE / 2,  0, DOTSIZE, DOTSIZE);
+        g2.drawLine(xpos, ypos, xpos - (int) (ed.tf2D.radius * binWidth), 0);
+        g2.drawLine(xpos, ypos, xpos + (int) (ed.tf2D.radius * binWidth), 0);
+        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.tf2D.radius * binWidth) - DOTSIZE / 2, 0, DOTSIZE,
+                DOTSIZE);
         g2.fill(radiusControlPoint);
     }
-    
-    
+
     private class TriangleWidgetHandler extends MouseMotionAdapter {
 
         @Override
@@ -101,12 +101,12 @@ public class TransferFunction2DView extends javax.swing.JPanel {
                 setCursor(Cursor.getDefaultCursor());
             }
         }
-        
+
         @Override
         public void mouseDragged(MouseEvent e) {
             if (selectedBaseControlPoint || selectedRadiusControlPoint) {
                 Point dragEnd = e.getPoint();
-                
+
                 if (selectedBaseControlPoint) {
                     // restrain to horizontal movement
                     dragEnd.setLocation(dragEnd.x, baseControlPoint.getCenterY());
@@ -129,17 +129,16 @@ public class TransferFunction2DView extends javax.swing.JPanel {
                 if (selectedBaseControlPoint) {
                     ed.tf2D.baseIntensity = (short) (dragEnd.x / binWidth);
                 } else if (selectedRadiusControlPoint) {
-                    ed.tf2D.radius = (dragEnd.x - (ed.tf2D.baseIntensity * binWidth))/binWidth;
+                    ed.tf2D.radius = (dragEnd.x - (ed.tf2D.baseIntensity * binWidth)) / binWidth;
                 }
                 ed.setSelectedInfo();
-                
+
                 repaint();
-            } 
+            }
         }
 
     }
-    
-    
+
     private class SelectionHandler extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
@@ -152,7 +151,7 @@ public class TransferFunction2DView extends javax.swing.JPanel {
                 selectedBaseControlPoint = false;
             }
         }
-        
+
         @Override
         public void mouseReleased(MouseEvent e) {
             selectedRadiusControlPoint = false;
@@ -161,28 +160,24 @@ public class TransferFunction2DView extends javax.swing.JPanel {
             repaint();
         }
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated
+    // Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 400, Short.MAX_VALUE));
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 300, Short.MAX_VALUE));
     }// </editor-fold>//GEN-END:initComponents
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables

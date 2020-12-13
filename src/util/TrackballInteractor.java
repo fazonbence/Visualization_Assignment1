@@ -12,10 +12,10 @@ import com.jogamp.opengl.GL2;
  */
 public class TrackballInteractor {
 
-    private int lmx = 0, lmy = 0;	//remembers last mouse location
+    private int lmx = 0, lmy = 0; // remembers last mouse location
     private double[] trackballXform = new double[16];
     private double[] trackballXformPlane = new double[16];
-    private double[] planeNorm = new double[]{0d, 0d, 1d};
+    private double[] planeNorm = new double[] { 0d, 0d, 1d };
     private double[] lastPos = new double[3];
     private double[] axis = new double[3];
     private double angle;

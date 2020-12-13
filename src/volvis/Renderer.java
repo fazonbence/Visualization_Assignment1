@@ -13,19 +13,19 @@ import util.TFChangeListener;
  * @author michel
  */
 public abstract class Renderer {
-     int winWidth, winHeight;
+    int winWidth, winHeight;
     boolean visible = false;
     boolean interactiveMode = false;
     ArrayList<TFChangeListener> listeners = new ArrayList<TFChangeListener>();
 
     public Renderer() {
-        
+
     }
 
     public void setInteractiveMode(boolean flag) {
         interactiveMode = flag;
     }
-    
+
     public void setWinWidth(int w) {
         winWidth = w;
     }
@@ -55,6 +55,6 @@ public abstract class Renderer {
             listeners.add(l);
         }
     }
-    
+
     public abstract void visualize(GL2 gl);
 }

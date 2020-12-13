@@ -16,20 +16,18 @@ package volvis;
 public class TransferFunction2D {
     // base of the intensity of the triangle
     public short baseIntensity;
-    // width of half of the triangle in intensity value units 
+    // width of half of the triangle in intensity value units
     public double radius;
     public TFColor color;
-        
 
-        public TransferFunction2D(short base, double r) {
-            this.baseIntensity = base;
-            this.radius = r;
-            this.color = new TFColor(0.0, 204.0/255.0, 153.0/255.0, 0.3);
-        }
-        
-        public void SetBaseRadius(short base, double r)
-        {   
-            this.baseIntensity = base;
-            this.radius = r;
-        }
+    public TransferFunction2D(short base, double r) {
+        this.baseIntensity = base;
+        this.radius = r;
+        this.color = new TFColor(0.0, 204.0 / 255.0, 153.0 / 255.0, 0.3);
+    }
+
+    public void SetBaseRadius(short base, double r) {
+        this.baseIntensity = base;
+        this.radius = r;
+    }
 }
