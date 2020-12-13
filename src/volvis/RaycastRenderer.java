@@ -34,12 +34,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Stores the first 8 number in binary format
      */
-    private boolean[][] binaryNumbers = new boolean[9][3];
+    private boolean[][] binaryNumbers = new boolean[8][3];
 
     /**
      * Stores the 8 nearest points to the trilinear interpolation
      */
-    // creating these was the bottleneck
     private double[][] nearestPoints = new double[8][3];// [points][coordinate x-y-z]
 
     /**
@@ -924,7 +923,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         isoColorBack.g = 1.0;
         isoColorBack.b = 0.0;
         isoColorBack.a = 1.0;
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 8; i++) {
             binaryNumbers[i] = convertToBinary(i);
         }
 
