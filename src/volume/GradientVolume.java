@@ -52,17 +52,11 @@ public class GradientVolume {
      * Computes the gradient information of the volume according to Levoy's paper.
      */
     private void compute() {
-        // TODO 4: Implement gradient computation.
-
         // this just initializes all gradients to the vector (0,0,0)
         for (int i = 0; i < data.length; i++) {
             data[i] = zero;
         }
 
-        // FLAG we don't have to compute the edges, however we need to give an
-        // explanation for this
-        // FLAG is s the voxel value?
-        // Computes the gradients for the vector
         for (int x = 1; x < dimX - 1; x++) {
             for (int y = 1; y < dimY - 1; y++) {
                 for (int z = 1; z < dimZ - 1; z++) {
